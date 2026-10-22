@@ -1,0 +1,113 @@
+# ==============================
+# Python
+# ==============================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Type checking / linters
+.mypy_cache/
+.pyright/
+.ruff_cache/
+
+# ==============================
+# IDEs / Editors
+# ==============================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ==============================
+# Operating system
+# ==============================
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Linux
+*~
+.nfs*
+
+# macOS
+.DS_Store
+
+# ==============================
+# Environment / secrets
+# ==============================
+
+.env
+.env.*
+!.env.example
+
+# ==============================
+# Logs
+# ==============================
+
+*.log
+logs/
+
+# ==============================
+# Databases
+# ==============================
+
+*.sqlite
+*.sqlite3
+*.db
+
+# ==============================
+# Temporary files
+# ==============================
+
+*.tmp
+*.temp
+*.bak
+*.old
+
+# ==============================
+# OpenMC / Nuclear data
+# ==============================
+
+# Large nuclear data files
+*.h5
+*.hdf5
+*.h5.*
+cross_sections.xml
+
+# OpenMC generated files
+statepoint.*
+summary.h5
+tallies.out
+particles/
+plots/
+
+# ==============================
+# Generated simulation output
+# ==============================
+
+output/
+outputs/
+results/

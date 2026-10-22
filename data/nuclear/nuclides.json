@@ -1,0 +1,71 @@
+
+{
+  "schema_version": 1,
+  "source": {
+    "name": "NNDC ENSDF",
+    "reference": "137Cs beta decay; ENSDF evaluation, October 2006, published in NDS 108 (2007)",
+    "url": "https://www.nndc.bnl.gov/ensnds/137/Ba/beta_decay.pdf",
+    "data_status": "Evaluated nuclear data; energy deposition not yet modelled"
+  },
+  "nuclides": [
+    {
+      "name": "Cs-137",
+      "element": "Cs",
+      "atomic_number": 55,
+      "mass_number": 137,
+      "state": "ground",
+      "half_life_s": 949328928,
+      "half_life_uncertainty": "0.09 years",
+      "half_life_uncertainty_s": 2840184.0,
+      "decay_energy_mev": 0.0,
+      "energy_status": "partial_emission_modelled",
+      "branches": [
+        {
+          "daughter": "Ba-137m",
+          "fraction": 0.947,
+          "mode": "beta_minus",
+          "emitted_energy_mev": 0.17432
+        },
+        {
+          "daughter": "Ba-137",
+          "fraction": 0.053,
+          "mode": "beta_minus",
+          "emitted_energy_mev": 0.41626
+        }
+      ]
+    },
+    {
+      "name": "Ba-137m",
+      "element": "Ba",
+      "atomic_number": 56,
+      "mass_number": 137,
+      "state": "metastable",
+      "excitation_energy_kev": 661.659,
+      "half_life_s": 153.12,
+      "half_life_uncertainty": "0.01 minutes",
+      "half_life_uncertainty_s": 0.6,
+      "decay_energy_mev": 0.0,
+      "energy_status": "partial_emission_modelled",
+      "branches": [
+        {
+          "daughter": "Ba-137",
+          "fraction": 1.0,
+          "mode": "isomeric_transition",
+          "emitted_energy_mev": 0.661657  
+        }
+      ]
+    },
+    {
+      "name": "Ba-137",
+      "element": "Ba",
+      "atomic_number": 56,
+      "mass_number": 137,
+      "state": "ground",
+      "half_life_s": null,
+      "decay_energy_mev": 0.0,
+      "energy_status": "stable",
+      "branches": []
+    }
+    
+  ]
+}
