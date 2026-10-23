@@ -13,7 +13,13 @@ dependencies = [
     "scipy",
     "matplotlib",
     "pandas",
+    "mysql-connector-python",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests que requieren una base de datos MySQL real",
+]

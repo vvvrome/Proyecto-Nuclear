@@ -1,5 +1,10 @@
 import pytest
 
+from nuclear_sim.plant.reactor import Reactor
+from nuclear_sim.plant.simulation import PlantSimulation
+from nuclear_sim.telemetry.collector import TelemetryCollector
+from nuclear_sim.telemetry.models import TelemetryReading
+from nuclear_sim.thermal.thermal_model import ThermalModel
 from nuclear_sim.nuclear.kinetics.temperature_feedback import (
     TemperatureFeedback,
 )
@@ -137,3 +142,23 @@ def test_non_finite_external_reactivity_is_rejected():
             temperature_k=573.15,
             external_reactivity=float("nan"),
         )
+
+def test_simulation_generates_telemetry():
+    reactor = Reactor(rated_power_mw=3000)
+    telemetry = TelemetryCollector()
+
+    simulation = PlantSimulation(
+        reactor=reactor,
+        thermal_model=ThermalModel(),
+        telemetry_collector=telemetry,
+    )
+
+    state = simulation.step(
+        dt_s=0.1,
+        heat_removed_mw=0.0,
+    )
+
+    readings = telemetry.collect(state)
+
+    assert len(readings) == 20
+    assert all(isinstance(reading, TelemetryReading) for reading in readings)

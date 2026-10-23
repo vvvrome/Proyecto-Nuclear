@@ -7,6 +7,7 @@ from nuclear_sim.thermal.thermal_model import ThermalModel
 from nuclear_sim.thermal.power_cycle import PowerCycle
 from nuclear_sim.plant.plant_instrumentation import PlantInstrumentation
 from nuclear_sim.plant.plant_controller import PlantController
+from nuclear_sim.telemetry.collector import TelemetryCollector
 
 @dataclass(frozen=True)
 class PlantState:
@@ -51,6 +52,7 @@ class PlantSimulation:
         reactor_dynamics: ReactorDynamics | None = None,
         instrumentation: PlantInstrumentation | None = None,
         controller: PlantController | None = None,
+        telemetry_collector: TelemetryCollector | None = None,
     ):
         self.reactor = reactor
         self.thermal_model = thermal_model
@@ -58,6 +60,7 @@ class PlantSimulation:
         self.reactor_dynamics = reactor_dynamics
         self.instrumentation = instrumentation
         self.controller = controller
+        self.telemetry_collector = telemetry_collector
         self._state = PlantState(
             time_s=0.0,
             power_mw=reactor.state().power_mw,
@@ -205,6 +208,9 @@ class PlantSimulation:
 
         if self.instrumentation is not None:
             self.instrumentation.update(self._state)
+
+        if self.telemetry_collector is not None:
+            self.telemetry_collector.collect(self._state)
 
         return self._state
     def set_reactor_power(self, power_fraction: float):

@@ -1,0 +1,107 @@
+from nuclear_sim.plant.simulation import PlantSimulation
+from nuclear_sim.database.repository import MySQLRepository
+from .collector import TelemetryCollector
+
+
+class SimulationRecorder:
+    """Ejecuta una simulación y persiste su telemetría en MySQL."""
+
+    def __init__(
+        self,
+        simulation: PlantSimulation,
+        repository: MySQLRepository,
+        collector: TelemetryCollector | None = None,
+    ) -> None:
+        self.simulation = simulation
+        self.repository = repository
+        self.collector = collector or TelemetryCollector()
+        self.run_id: int | None = None
+
+    def start_run(
+        self,
+        description: str | None = None,
+    ) -> int:
+        """Crea una nueva ejecución en la base de datos."""
+
+        initial_power_fraction = (
+            self.simulation.state().power_mw
+            / self.simulation.reactor.rated_power_mw
+        )
+
+        self.run_id = self.repository.create_run(
+            initial_power_fraction=initial_power_fraction,
+            description=description,
+        )
+
+        return self.run_id
+
+    def step(
+        self,
+        dt_s: float,
+        heat_removed_mw: float,
+        external_reactivity: float | None = None,
+    ):
+        """Ejecuta un paso y guarda su telemetría."""
+
+        if self.run_id is None:
+            raise RuntimeError(
+                "La ejecución no ha sido iniciada. "
+                "Llama a start_run() antes de ejecutar pasos."
+            )
+
+        state = self.simulation.step(
+            dt_s=dt_s,
+            heat_removed_mw=heat_removed_mw,
+            external_reactivity=external_reactivity,
+        )
+
+        readings = self.collector.collect(state)
+
+        self.repository.save_readings(
+            run_id=self.run_id,
+            readings=readings,
+        )
+
+        return state
+
+    def finish_run(
+        self,
+        status: str = "completed",
+    ) -> None:
+        """Finaliza la ejecución actual."""
+
+        if self.run_id is None:
+            raise RuntimeError(
+                "No hay ninguna ejecución activa."
+            )
+
+        self.repository.finish_run(
+            run_id=self.run_id,
+            status=status,
+        )
+
+    def run(
+        self,
+        steps: int,
+        dt_s: float,
+        heat_removed_mw: float,
+        external_reactivity: float | None = None,
+    ) -> None:
+        """Ejecuta una simulación completa y registra su resultado."""
+
+        self.start_run()
+
+        try:
+            for _ in range(steps):
+                self.step(
+                    dt_s=dt_s,
+                    heat_removed_mw=heat_removed_mw,
+                    external_reactivity=external_reactivity,
+                )
+
+        except Exception:
+            self.finish_run(status="failed")
+            raise
+
+        else:
+            self.finish_run(status="completed")
