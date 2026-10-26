@@ -16,12 +16,16 @@ class SimulationRecorder:
         self.repository = repository
         self.collector = collector or TelemetryCollector()
         self.run_id: int | None = None
+        self.last_run_id: int | None = None
 
     def start_run(
         self,
         description: str | None = None,
     ) -> int:
         """Crea una nueva ejecución en la base de datos."""
+
+        if self.run_id is not None:
+            raise RuntimeError("Ya hay una ejecucion activa.")
 
         initial_power_fraction = (
             self.simulation.state().power_mw
@@ -32,6 +36,8 @@ class SimulationRecorder:
             initial_power_fraction=initial_power_fraction,
             description=description,
         )
+
+        self.last_run_id = self.run_id
 
         return self.run_id
 
@@ -75,10 +81,14 @@ class SimulationRecorder:
                 "No hay ninguna ejecución activa."
             )
 
+        run_id = self.run_id
+
         self.repository.finish_run(
-            run_id=self.run_id,
+            run_id=run_id,
             status=status,
         )
+
+        self.run_id = None
 
     def run(
         self,

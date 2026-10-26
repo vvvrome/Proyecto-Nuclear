@@ -238,7 +238,7 @@ def test_simulation_recorder_persists_failed_run():
                 heat_removed_mw=0.0,
             )
 
-        run_id = recorder.run_id
+        run_id = recorder.last_run_id
 
         cursor = connection.cursor()
 
@@ -260,6 +260,48 @@ def test_simulation_recorder_persists_failed_run():
         assert row is not None
         assert row[0] == "failed"
         assert row[1] is not None
+
+    finally:
+        if run_id is not None:
+            cursor = connection.cursor()
+
+            try:
+                cursor.execute(
+                    "DELETE FROM simulation_runs WHERE id = %s",
+                    (run_id,),
+                )
+                connection.commit()
+            finally:
+                cursor.close()
+
+        connection.close()
+
+@pytest.mark.integration
+def test_repository_returns_runs():
+    connection = create_connection()
+    run_id = None
+
+    try:
+        repository = MySQLRepository(connection)
+
+        run_id = repository.create_run(
+            initial_power_fraction=0.8,
+            description="Prueba de consulta histórica",
+        )
+
+        runs = repository.get_runs()
+
+        matching_runs = [
+            run for run in runs
+            if run["id"] == run_id
+        ]
+
+        assert len(matching_runs) == 1
+        assert matching_runs[0]["initial_power_fraction"] == pytest.approx(0.8)
+        assert matching_runs[0]["description"] == (
+            "Prueba de consulta histórica"
+        )
+        assert matching_runs[0]["status"] == "running"
 
     finally:
         if run_id is not None:

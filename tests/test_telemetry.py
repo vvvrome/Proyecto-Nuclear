@@ -5,6 +5,7 @@ from nuclear_sim.plant.simulation import PlantSimulation
 from nuclear_sim.thermal.thermal_model import ThermalModel
 from nuclear_sim.plant.simulation import Reactor
 from nuclear_sim.telemetry.simulation_recorder import SimulationRecorder
+from nuclear_sim.telemetry.history import HistoricalService
 import pytest
 
 
@@ -323,3 +324,136 @@ def test_simulation_recorder_marks_run_failed_on_error():
     assert len(repository.finished_runs) == 1
 
     assert repository.finished_runs[0]["status"] == "failed"
+
+class FakeHistoryRepository:
+    def __init__(self):
+        self.runs = [
+            {
+                "id": 1,
+                "started_at": "2026-10-24 10:00:00",
+                "ended_at": "2026-10-24 10:05:00",
+                "description": "Simulación nominal",
+                "initial_power_fraction": 0.8,
+                "status": "completed",
+            },
+            {
+                "id": 2,
+                "started_at": "2026-10-24 11:00:00",
+                "ended_at": None,
+                "description": "Simulación en curso",
+                "initial_power_fraction": 0.5,
+                "status": "running",
+            },
+        ]
+
+        self.readings = {
+            1: [
+                TelemetryReading(
+                    timestamp_s=0.1,
+                    variable="reactor_power",
+                    value=2400.0,
+                    unit="MW",
+                ),
+                TelemetryReading(
+                    timestamp_s=0.2,
+                    variable="reactor_power",
+                    value=2410.0,
+                    unit="MW",
+                ),
+            ]
+        }
+
+    def get_runs(self):
+        return self.runs
+
+    def get_readings(self, run_id, variable=None):
+        readings = self.readings.get(run_id, [])
+
+        if variable is None:
+            return readings
+
+        return [
+            reading
+            for reading in readings
+            if reading.variable == variable
+        ]
+
+
+def test_historical_service_returns_runs():
+    repository = FakeHistoryRepository()
+
+    service = HistoricalService(repository)
+
+    runs = service.get_runs()
+
+    assert len(runs) == 2
+    assert runs[0]["id"] == 1
+    assert runs[0]["status"] == "completed"
+
+
+def test_historical_service_returns_variable_history():
+    repository = FakeHistoryRepository()
+
+    service = HistoricalService(repository)
+
+    readings = service.get_variable_history(
+        run_id=1,
+        variable="reactor_power",
+    )
+
+    assert len(readings) == 2
+    assert readings[0].value == pytest.approx(2400.0)
+    assert readings[1].value == pytest.approx(2410.0)
+
+
+def test_historical_service_returns_empty_history_for_unknown_run():
+    repository = FakeHistoryRepository()
+
+    service = HistoricalService(repository)
+
+    readings = service.get_variable_history(
+        run_id=999,
+        variable="reactor_power",
+    )
+
+    assert readings == []
+
+def test_simulation_recorder_finish_clears_active_run():
+    reactor = Reactor(rated_power_mw=3000)
+
+    simulation = PlantSimulation(
+        reactor=reactor,
+        thermal_model=ThermalModel(),
+    )
+
+    repository = FakeRepository()
+
+    recorder = SimulationRecorder(
+        simulation=simulation,
+        repository=repository,
+    )
+
+    recorder.start_run()
+    recorder.finish_run()
+
+    assert recorder.run_id is None
+
+def test_simulation_recorder_rejects_second_active_run():
+    reactor = Reactor(rated_power_mw=3000)
+
+    simulation = PlantSimulation(
+        reactor=reactor,
+        thermal_model=ThermalModel(),
+    )
+
+    repository = FakeRepository()
+
+    recorder = SimulationRecorder(
+        simulation=simulation,
+        repository=repository,
+    )
+
+    recorder.start_run()
+
+    with pytest.raises(RuntimeError):
+        recorder.start_run()

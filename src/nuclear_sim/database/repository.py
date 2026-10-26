@@ -175,3 +175,40 @@ class MySQLRepository:
             ]
         finally:
             cursor.close()
+
+    def get_runs(self) -> list[dict]:
+        """Obtiene todas las ejecuciones almacenadas."""
+
+        cursor = self.connection.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    started_at,
+                    ended_at,
+                    description,
+                    initial_power_fraction,
+                    status
+                FROM simulation_runs
+                ORDER BY started_at DESC, id DESC
+                """
+            )
+
+            rows = cursor.fetchall()
+
+            return [
+                {
+                    "id": row[0],
+                    "started_at": row[1],
+                    "ended_at": row[2],
+                    "description": row[3],
+                    "initial_power_fraction": row[4],
+                    "status": row[5],
+                }
+                for row in rows
+            ]
+
+        finally:
+            cursor.close()
