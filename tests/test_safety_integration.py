@@ -4,7 +4,7 @@ from nuclear_sim.plant.reactor import Reactor
 from nuclear_sim.plant.safety_integration import SafetyIntegration
 from nuclear_sim.safety.limits import SafetyLimit
 from nuclear_sim.safety.system import SafetySystem
-
+from nuclear_sim.safety.incident import Incident
 
 def create_integration():
     reactor = Reactor(rated_power_mw=3000)
@@ -111,3 +111,69 @@ def test_warning_and_critical_prioritize_critical():
     assert len(state.alarms) == 2
     assert state.emergency_active is True
     assert reactor.state().status == "shutdown"
+
+def test_warning_condition_creates_incident():
+    reactor, integration = create_integration()
+
+    state = integration.evaluate(
+        {
+            "Core Temperature": 750.0,
+            "Primary Pressure": 100.0,
+        }
+    )
+
+    assert len(state.incidents) == 1
+
+    incident = state.incidents[0]
+
+    assert incident.name == "Core Temperature"
+    assert incident.severity == "warning"
+    assert incident.status == "open"
+
+
+def test_repeated_condition_does_not_create_duplicate_incident():
+    reactor, integration = create_integration()
+
+    first_state = integration.evaluate(
+        {
+            "Core Temperature": 750.0,
+            "Primary Pressure": 100.0,
+        }
+    )
+
+    second_state = integration.evaluate(
+        {
+            "Core Temperature": 750.0,
+            "Primary Pressure": 100.0,
+        }
+    )
+
+    assert len(first_state.incidents) == 1
+    assert len(second_state.incidents) == 1
+
+    assert (
+        first_state.incidents[0].name
+        == second_state.incidents[0].name
+    )
+
+
+def test_incident_is_resolved_when_condition_returns_to_normal():
+    reactor, integration = create_integration()
+
+    integration.evaluate(
+        {
+            "Core Temperature": 750.0,
+            "Primary Pressure": 100.0,
+        }
+    )
+
+    state = integration.evaluate(
+        {
+            "Core Temperature": 650.0,
+            "Primary Pressure": 100.0,
+        }
+    )
+
+    assert len(state.incidents) == 1
+    assert state.incidents[0].name == "Core Temperature"
+    assert state.incidents[0].status == "resolved"
