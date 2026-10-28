@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from nuclear_sim.plant.safety_integration import SafetyIntegration
 from nuclear_sim.plant.reactor import Reactor
 from nuclear_sim.plant.reactor_dynamics import ReactorDynamics
 from nuclear_sim.thermal.energy_balance import EnergyBalanceState
@@ -53,6 +54,7 @@ class PlantSimulation:
         instrumentation: PlantInstrumentation | None = None,
         controller: PlantController | None = None,
         telemetry_collector: TelemetryCollector | None = None,
+        safety_integration: SafetyIntegration | None = None,
     ):
         self.reactor = reactor
         self.thermal_model = thermal_model
@@ -61,6 +63,8 @@ class PlantSimulation:
         self.instrumentation = instrumentation
         self.controller = controller
         self.telemetry_collector = telemetry_collector
+        self.safety_integration = safety_integration
+        self._safety_state = None
         self._state = PlantState(
             time_s=0.0,
             power_mw=reactor.state().power_mw,
@@ -71,6 +75,21 @@ class PlantSimulation:
             net_electrical_power_mw=0.0,
             energy_balance = None,
         )
+
+        if self.safety_integration is not None:
+            safety_values = {
+                "Core Temperature": self._state.temperature_k,
+            }
+
+            if self.power_cycle is not None:
+                safety_values["Primary Pressure"] = (
+                    self.power_cycle.coolant.pressure_mpa
+                )
+
+            self._safety_state = self.safety_integration.evaluate(
+                values=safety_values,
+                timestamp_s=self._state.time_s,
+            )
 
     def state(self) -> PlantState:
         return self._state
@@ -205,6 +224,21 @@ class PlantSimulation:
 
             pump_hydraulic_power_mw=pump_hydraulic_power_mw,
         )
+
+        if self.safety_integration is not None:
+            safety_values = {
+                "Core Temperature": self._state.temperature_k,
+            }
+
+            if self.power_cycle is not None:
+                safety_values["Primary Pressure"] = (
+                    self.power_cycle.coolant.pressure_mpa
+                )
+
+            self._safety_state = self.safety_integration.evaluate(
+                values=safety_values,
+                timestamp_s=self._state.time_s,
+            )
 
         if self.instrumentation is not None:
             self.instrumentation.update(self._state)

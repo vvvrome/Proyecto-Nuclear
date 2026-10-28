@@ -8,6 +8,16 @@ from nuclear_sim.thermal.thermal_model import ThermalModel
 from nuclear_sim.plant.reactor import Reactor
 from nuclear_sim.plant.simulation import PlantSimulation
 from nuclear_sim.telemetry.simulation_recorder import SimulationRecorder
+from nuclear_sim.safety.incident import Incident
+from nuclear_sim.plant.safety_integration import SafetyIntegration
+from nuclear_sim.safety.limits import SafetyLimit
+from nuclear_sim.safety.system import SafetySystem
+from nuclear_sim.thermal.power_cycle import PowerCycle
+from nuclear_sim.thermal.coolant import Coolant
+from nuclear_sim.thermal.heat_transfer import HeatTransferModel
+from nuclear_sim.thermal.steam_generator import SteamGenerator
+from nuclear_sim.thermal.turbine import Turbine
+from nuclear_sim.thermal.generator import Generator
 
 class FailingSimulation:
     def __init__(self):
@@ -92,9 +102,40 @@ def test_simulation_recorder_persists_real_simulation():
     try:
         repository = MySQLRepository(connection)
 
+        reactor = Reactor(rated_power_mw=3000)
+
+        power_cycle = PowerCycle(
+            coolant=Coolant(
+                mass_flow_kg_s=1000.0,
+                inlet_temperature_k=573.15,
+                pressure_mpa=15.5,
+            ),
+            heat_transfer=HeatTransferModel(),
+            steam_generator=SteamGenerator(),
+            turbine=Turbine(),
+            generator=Generator(),
+        )
+
+        safety = SafetySystem()
+
+        safety.add_limit(
+            SafetyLimit(
+                name="Primary Pressure",
+                warning=15.0,
+                critical=16.0,
+            )
+        )
+
+        safety_integration = SafetyIntegration(
+            reactor=reactor,
+            safety_system=safety,
+        )
+
         simulation = PlantSimulation(
-            reactor=Reactor(rated_power_mw=3000),
+            reactor=reactor,
             thermal_model=ThermalModel(),
+            power_cycle=power_cycle,
+            safety_integration=safety_integration,
         )
 
         recorder = SimulationRecorder(
@@ -117,6 +158,15 @@ def test_simulation_recorder_persists_real_simulation():
         readings = repository.get_readings(
             run_id=run_id,
         )
+
+        incidents = repository.get_incidents(
+            run_id=run_id,
+        )
+
+        assert len(incidents) == 1
+        assert incidents[0].name == "Primary Pressure"
+        assert incidents[0].severity == "warning"
+        assert incidents[0].status == "open"
 
         assert len(readings) == 60
 
@@ -317,3 +367,140 @@ def test_repository_returns_runs():
                 cursor.close()
 
         connection.close()
+
+@pytest.mark.integration
+def test_repository_persists_incident():
+    connection = create_connection()
+    run_id = None
+
+    try:
+        repository = MySQLRepository(connection)
+
+        run_id = repository.create_run(
+            initial_power_fraction=0.8,
+            description="Prueba de persistencia de incidente",
+        )
+
+        incident = Incident(
+            timestamp_s=1.5,
+            name="Core Temperature",
+            severity="critical",
+            message="Temperatura del núcleo por encima del límite crítico.",
+            source="SafetyIntegration",
+            status="open",
+        )
+
+        incident_id = repository.save_incident(
+            run_id=run_id,
+            incident=incident,
+        )
+
+        cursor = connection.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    run_id,
+                    timestamp_s,
+                    name,
+                    severity,
+                    message,
+                    source,
+                    status
+                FROM incidents
+                WHERE id = %s
+                """,
+                (incident_id,),
+            )
+
+            row = cursor.fetchone()
+
+        finally:
+            cursor.close()
+
+        assert row is not None
+        assert row[0] == incident_id
+        assert row[1] == run_id
+        assert row[2] == pytest.approx(1.5)
+        assert row[3] == "Core Temperature"
+        assert row[4] == "critical"
+        assert row[5] == (
+            "Temperatura del núcleo por encima del límite crítico."
+        )
+        assert row[6] == "SafetyIntegration"
+        assert row[7] == "open"
+
+    finally:
+        if run_id is not None:
+            cursor = connection.cursor()
+
+            try:
+                cursor.execute(
+                    "DELETE FROM simulation_runs WHERE id = %s",
+                    (run_id,),
+                )
+                connection.commit()
+            finally:
+                cursor.close()
+
+        connection.close()
+
+@pytest.mark.integration
+def test_repository_returns_incidents():
+    connection = create_connection()
+    run_id = None
+
+    try:
+        repository = MySQLRepository(connection)
+
+        run_id = repository.create_run(
+            initial_power_fraction=0.8,
+            description="Prueba de consulta de incidentes",
+        )
+
+        incident = Incident(
+            timestamp_s=2.5,
+            name="Core Temperature",
+            severity="warning",
+            message="Temperatura del núcleo elevada.",
+            source="SafetyIntegration",
+            status="open",
+        )
+
+        repository.save_incident(
+            run_id=run_id,
+            incident=incident,
+        )
+
+        incidents = repository.get_incidents(
+            run_id=run_id,
+        )
+
+        assert len(incidents) == 1
+
+        result = incidents[0]
+
+        assert result.timestamp_s == pytest.approx(2.5)
+        assert result.name == "Core Temperature"
+        assert result.severity == "warning"
+        assert result.message == "Temperatura del núcleo elevada."
+        assert result.source == "SafetyIntegration"
+        assert result.status == "open"
+
+    finally:
+        if run_id is not None:
+            cursor = connection.cursor()
+
+            try:
+                cursor.execute(
+                    "DELETE FROM simulation_runs WHERE id = %s",
+                    (run_id,),
+                )
+                connection.commit()
+            finally:
+                cursor.close()
+
+        connection.close()
+

@@ -177,3 +177,31 @@ def test_incident_is_resolved_when_condition_returns_to_normal():
     assert len(state.incidents) == 1
     assert state.incidents[0].name == "Core Temperature"
     assert state.incidents[0].status == "resolved"
+
+def test_repeated_condition_reuses_active_incident():
+    reactor, integration = create_integration()
+
+    first_state = integration.evaluate(
+        {
+            "Core Temperature": 750.0,
+            "Primary Pressure": 100.0,
+        },
+        timestamp_s=1.0,
+    )
+
+    second_state = integration.evaluate(
+        {
+            "Core Temperature": 750.0,
+            "Primary Pressure": 100.0,
+        },
+        timestamp_s=2.0,
+    )
+
+    first_incident = first_state.incidents[0]
+    second_incident = second_state.incidents[0]
+
+    assert first_incident.name == second_incident.name
+    assert first_incident.timestamp_s == pytest.approx(1.0)
+    assert second_incident.timestamp_s == pytest.approx(1.0)
+    assert first_incident.status == "open"
+    assert second_incident.status == "open"

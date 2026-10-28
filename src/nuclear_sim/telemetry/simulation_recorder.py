@@ -17,7 +17,8 @@ class SimulationRecorder:
         self.collector = collector or TelemetryCollector()
         self.run_id: int | None = None
         self.last_run_id: int | None = None
-
+        self._saved_incidents: set[tuple[str, float]] = set()
+        
     def start_run(
         self,
         description: str | None = None,
@@ -67,6 +68,30 @@ class SimulationRecorder:
             run_id=self.run_id,
             readings=readings,
         )
+
+        if self.simulation._safety_state is not None:
+            for incident in self.simulation._safety_state.incidents:
+                incident_key = (
+                    incident.name,
+                    incident.timestamp_s,
+                )
+
+                if incident.status == "open":
+                    if incident_key in self._saved_incidents:
+                        continue
+
+                    self.repository.save_incident(
+                        run_id=self.run_id,
+                        incident=incident,
+                    )
+
+                    self._saved_incidents.add(incident_key)
+
+                else:
+                    self.repository.save_incident(
+                        run_id=self.run_id,
+                        incident=incident,
+                    )
 
         return state
 

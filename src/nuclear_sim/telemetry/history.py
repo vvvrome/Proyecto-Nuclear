@@ -21,3 +21,9 @@ class HistoricalService:
             run_id=run_id,
             variable=variable,
         )
+
+    def get_incidents(self, run_id: int):
+        """Obtiene los incidentes de una ejecución."""
+        return self.repository.get_incidents(
+            run_id=run_id,
+        )

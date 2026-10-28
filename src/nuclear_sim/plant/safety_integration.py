@@ -55,17 +55,19 @@ class SafetyIntegration:
                     )
                 )
 
-                incident = Incident(
-                    timestamp_s=timestamp_s,
-                    name=name,
-                    severity="critical",
-                    message=f"{name} ha superado el límite crítico.",
-                    source="SafetySystem",
-                )
+                if name in self._active_incidents:
+                    incidents.append(self._active_incidents[name])
+                else:
+                    incident = Incident(
+                        timestamp_s=timestamp_s,
+                        name=name,
+                        severity="critical",
+                        message=f"{name} ha superado el límite crítico.",
+                        source="SafetySystem",
+                    )
 
-                self._active_incidents[name] = incident
-                incidents.append(incident)
-
+                    self._active_incidents[name] = incident
+                    incidents.append(incident)
             elif status == "warning":
                 alarms.append(
                     Alarm(
@@ -75,17 +77,19 @@ class SafetyIntegration:
                     )
                 )
 
-                incident = Incident(
-                    timestamp_s=timestamp_s,
-                    name=name,
-                    severity="warning",
-                    message=f"{name} ha superado el límite de aviso.",
-                    source="SafetySystem",
-                )
+                if name in self._active_incidents:
+                    incidents.append(self._active_incidents[name])
+                else:
+                    incident = Incident(
+                        timestamp_s=timestamp_s,
+                        name=name,
+                        severity="warning",
+                        message=f"{name} ha superado el límite de aviso.",
+                        source="SafetySystem",
+                    )
 
-                self._active_incidents[name] = incident
-                incidents.append(incident)
-
+                    self._active_incidents[name] = incident
+                    incidents.append(incident)
             elif name in self._active_incidents:
                 active_incident = self._active_incidents.pop(name)
 

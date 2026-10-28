@@ -6,8 +6,30 @@ from nuclear_sim.thermal.thermal_model import ThermalModel
 from nuclear_sim.plant.simulation import Reactor
 from nuclear_sim.telemetry.simulation_recorder import SimulationRecorder
 from nuclear_sim.telemetry.history import HistoricalService
+from nuclear_sim.safety.incident import Incident
+from nuclear_sim.safety.system import SafetySystem
+from nuclear_sim.safety.system import SafetyLimit
+from nuclear_sim.plant.safety_integration import SafetyIntegration
+from nuclear_sim.thermal.power_cycle import PowerCycle
+from nuclear_sim.thermal.coolant import Coolant
+from nuclear_sim.thermal.heat_transfer import HeatTransferModel
+from nuclear_sim.thermal.steam_generator import SteamGenerator
+from nuclear_sim.thermal.turbine import Turbine
+from nuclear_sim.thermal.generator import Generator
 import pytest
 
+def create_power_cycle():
+    return PowerCycle(
+        coolant=Coolant(
+            mass_flow_kg_s=1000.0,
+            inlet_temperature_k=573.15,
+            pressure_mpa=15.5,
+        ),
+        heat_transfer=HeatTransferModel(),
+        steam_generator=SteamGenerator(),
+        turbine=Turbine(),
+        generator=Generator(),
+    )
 
 class FailingSimulation:
     def __init__(self):
@@ -121,6 +143,7 @@ class FakeRepository:
     def __init__(self):
         self.created_runs = []
         self.saved_readings = []
+        self.saved_incidents= []
         self.finished_runs = []
 
     def create_run(
@@ -142,6 +165,14 @@ class FakeRepository:
             {
                 "run_id": run_id,
                 "readings": readings,
+            }
+        )
+
+    def save_incident(self, run_id, incident):
+        self.saved_incidents.append(
+            {
+                "run_id": run_id,
+                "incident": incident,
             }
         )
 
@@ -362,6 +393,18 @@ class FakeHistoryRepository:
                 ),
             ]
         }
+        self.incidents = {
+            1: [
+                Incident(
+                    timestamp_s=1.5,
+                    name="Core Temperature",
+                    severity="warning",
+                    message="Temperatura del núcleo elevada.",
+                    source="SafetyIntegration",
+                    status="open",
+                )
+            ]
+        }
 
     def get_runs(self):
         return self.runs
@@ -378,7 +421,9 @@ class FakeHistoryRepository:
             if reading.variable == variable
         ]
 
-
+    def get_incidents(self, run_id):
+        return self.incidents.get(run_id, [])
+    
 def test_historical_service_returns_runs():
     repository = FakeHistoryRepository()
 
@@ -457,3 +502,73 @@ def test_simulation_recorder_rejects_second_active_run():
 
     with pytest.raises(RuntimeError):
         recorder.start_run()
+
+def test_historical_service_returns_incidents():
+    repository = FakeHistoryRepository()
+
+    service = HistoricalService(repository)
+
+    incidents = service.get_incidents(
+        run_id=1,
+    )
+
+    assert len(incidents) == 1
+
+    incident = incidents[0]
+
+    assert incident.timestamp_s == pytest.approx(1.5)
+    assert incident.name == "Core Temperature"
+    assert incident.severity == "warning"
+    assert incident.message == "Temperatura del núcleo elevada."
+    assert incident.source == "SafetyIntegration"
+    assert incident.status == "open"
+
+def test_simulation_recorder_persists_incident():
+    reactor = Reactor(rated_power_mw=3000)
+    thermal_model = ThermalModel()
+    power_cycle = create_power_cycle()
+
+    safety = SafetySystem()
+
+    safety.add_limit(
+        SafetyLimit(
+            name="Primary Pressure",
+            warning=15.0,
+            critical=16.0,
+        )
+    )
+
+    safety_integration = SafetyIntegration(
+        reactor=reactor,
+        safety_system=safety,
+    )
+
+    simulation = PlantSimulation(
+        reactor=reactor,
+        thermal_model=thermal_model,
+        power_cycle=power_cycle,
+        safety_integration=safety_integration,
+    )
+
+    repository = FakeRepository()
+
+    recorder = SimulationRecorder(
+        simulation=simulation,
+        repository=repository,
+    )
+
+    recorder.start_run()
+
+    recorder.step(
+        dt_s=1.0,
+        heat_removed_mw=0.0,
+    )
+
+    assert len(repository.saved_incidents) == 1
+
+    saved = repository.saved_incidents[0]
+
+    assert saved["run_id"] == 123
+    assert saved["incident"].name == "Primary Pressure"
+    assert saved["incident"].severity == "warning"
+    assert saved["incident"].status == "open"

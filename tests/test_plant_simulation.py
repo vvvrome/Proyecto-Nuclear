@@ -15,6 +15,9 @@ from nuclear_sim.thermal.pump import Pump
 from nuclear_sim.plant.reactor_dynamics import ReactorDynamics
 from nuclear_sim.plant.plant_instrumentation import PlantInstrumentation
 from nuclear_sim.plant.simulation import PlantController
+from nuclear_sim.plant.safety_integration import SafetyIntegration
+from nuclear_sim.safety.limits import SafetyLimit
+from nuclear_sim.safety.system import SafetySystem
 
 
 def test_simulation_starts_at_zero_time():
@@ -993,3 +996,49 @@ def test_dynamic_controller_power_evolution():
                 f"potencia={power_fraction:.6f}, "
                 f"reactividad={dynamics.control_reactivity():.8f}"
             )
+
+def test_plant_safety_integration_evaluates_primary_pressure():
+    reactor = Reactor(rated_power_mw=3000)
+    thermal_model = ThermalModel()
+    power_cycle = create_power_cycle()
+
+    safety = SafetySystem()
+
+    safety.add_limit(
+        SafetyLimit(
+            name="Primary Pressure",
+            warning=15.0,
+            critical=16.0,
+        )
+    )
+
+    safety.add_limit(
+        SafetyLimit(
+            name="Core Temperature",
+            warning=700.0,
+            critical=800.0,
+        )
+    )
+
+    safety_integration = SafetyIntegration(
+        reactor=reactor,
+        safety_system=safety,
+    )
+
+    simulation = PlantSimulation(
+        reactor=reactor,
+        thermal_model=thermal_model,
+        power_cycle=power_cycle,
+        safety_integration=safety_integration,
+    )
+
+    simulation.step(
+        dt_s=1.0,
+        heat_removed_mw=0.0,
+    )
+
+
+    assert simulation._safety_state is not None
+    assert simulation._safety_state.assessment.overall_status == "warning"
+    assert len(simulation._safety_state.incidents) == 1
+    assert simulation._safety_state.incidents[0].name == "Primary Pressure"
