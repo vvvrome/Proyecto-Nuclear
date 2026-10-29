@@ -33,12 +33,15 @@ class SimulationRecorder:
             / self.simulation.reactor.rated_power_mw
         )
 
+        self._saved_incidents.clear()
+
         self.run_id = self.repository.create_run(
             initial_power_fraction=initial_power_fraction,
             description=description,
         )
 
         self.last_run_id = self.run_id
+        
 
         return self.run_id
 
@@ -69,8 +72,8 @@ class SimulationRecorder:
             readings=readings,
         )
 
-        if self.simulation._safety_state is not None:
-            for incident in self.simulation._safety_state.incidents:
+        if self.simulation.safety_state is not None:
+            for incident in self.simulation.safety_state.incidents:
                 incident_key = (
                     incident.name,
                     incident.timestamp_s,

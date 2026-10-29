@@ -33,6 +33,10 @@ class MySQLRepository:
             self.connection.commit()
 
             return cursor.lastrowid
+        except Exception:
+            self.connection.rollback()
+            raise
+
         finally:
             cursor.close()
 
@@ -53,6 +57,11 @@ class MySQLRepository:
             )
 
             self.connection.commit()
+
+        except Exception:
+            self.connection.rollback()
+            raise
+        
         finally:
             cursor.close()
 
@@ -89,6 +98,11 @@ class MySQLRepository:
             self.connection.commit()
 
             return cursor.lastrowid
+
+        except Exception:
+            self.connection.rollback()
+            raise
+        
         finally:
             cursor.close()
 
@@ -129,6 +143,11 @@ class MySQLRepository:
             )
 
             self.connection.commit()
+
+        except Exception:
+            self.connection.rollback()
+            raise
+
         finally:
             cursor.close()
 
@@ -169,6 +188,11 @@ class MySQLRepository:
             self.connection.commit()
 
             return cursor.lastrowid
+
+        except Exception:
+            self.connection.rollback()
+            raise
+        
         finally:
             cursor.close()
 

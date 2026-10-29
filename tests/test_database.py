@@ -504,3 +504,105 @@ def test_repository_returns_incidents():
 
         connection.close()
 
+def test_repository_rolls_back_when_create_run_fails():
+    class FailingCursor:
+        def execute(self, *args, **kwargs):
+            raise RuntimeError("Fallo SQL simulado")
+
+        def close(self):
+            pass
+
+    class FakeConnection:
+        def __init__(self):
+            self.rollback_called = False
+
+        def cursor(self):
+            return FailingCursor()
+
+        def commit(self):
+            pass
+
+        def rollback(self):
+            self.rollback_called = True
+
+    connection = FakeConnection()
+    repository = MySQLRepository(connection)
+
+    with pytest.raises(RuntimeError, match="Fallo SQL simulado"):
+        repository.create_run(
+            initial_power_fraction=0.8,
+            description="Test rollback",
+        )
+
+    assert connection.rollback_called is True
+
+def test_repository_rolls_back_when_finish_run_fails():
+    class FailingCursor:
+        def execute(self, *args, **kwargs):
+            raise RuntimeError("Fallo SQL simulado")
+
+        def close(self):
+            pass
+
+    class FakeConnection:
+        def __init__(self):
+            self.rollback_called = False
+
+        def cursor(self):
+            return FailingCursor()
+
+        def commit(self):
+            pass
+
+        def rollback(self):
+            self.rollback_called = True
+
+    connection = FakeConnection()
+    repository = MySQLRepository(connection)
+
+    with pytest.raises(RuntimeError, match="Fallo SQL simulado"):
+        repository.finish_run(
+            run_id=1,
+            status="completed",
+        )
+
+    assert connection.rollback_called is True
+
+def test_repository_rolls_back_when_save_reading_fails():
+    class FailingCursor:
+        def execute(self, *args, **kwargs):
+            raise RuntimeError("Fallo SQL simulado")
+
+        def close(self):
+            pass
+
+    class FakeConnection:
+        def __init__(self):
+            self.rollback_called = False
+
+        def cursor(self):
+            return FailingCursor()
+
+        def commit(self):
+            pass
+
+        def rollback(self):
+            self.rollback_called = True
+
+    connection = FakeConnection()
+    repository = MySQLRepository(connection)
+
+    reading = TelemetryReading(
+        timestamp_s=1.0,
+        variable="reactor_power",
+        value=2400.0,
+        unit="MW",
+    )
+
+    with pytest.raises(RuntimeError, match="Fallo SQL simulado"):
+        repository.save_reading(
+            run_id=1,
+            reading=reading,
+        )
+
+    assert connection.rollback_called is True

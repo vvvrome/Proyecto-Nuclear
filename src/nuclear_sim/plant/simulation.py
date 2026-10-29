@@ -94,6 +94,10 @@ class PlantSimulation:
     def state(self) -> PlantState:
         return self._state
 
+    @property
+    def safety_state(self):
+        return self._safety_state
+
     def step(
         self,
         dt_s: float,
