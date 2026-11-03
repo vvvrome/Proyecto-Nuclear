@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, redirect, request, url_for
+from flask import Blueprint, current_app, jsonify, redirect, request, url_for
 
 
 simulation_bp = Blueprint("simulation", __name__, url_prefix="/simulation")
@@ -24,3 +24,22 @@ def step():
     )
 
     return redirect(url_for("dashboard.index"))
+
+@simulation_bp.get("/telemetry")
+def telemetry():
+    simulation = current_app.config["SIMULATION"]
+    collector = simulation.telemetry_collector
+
+    readings = collector.readings if collector is not None else []
+
+    return jsonify(
+        [
+            {
+                "timestamp_s": reading.timestamp_s,
+                "variable": reading.variable,
+                "value": reading.value,
+                "unit": reading.unit,
+            }
+            for reading in readings
+        ]
+    )

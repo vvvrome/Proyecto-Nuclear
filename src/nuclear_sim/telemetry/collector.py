@@ -9,10 +9,13 @@ if TYPE_CHECKING:
 class TelemetryCollector:
     """Convierte el estado de la planta en lecturas de telemetría."""
 
+    def __init__(self) -> None:
+        self.readings: list[TelemetryReading] = []
+
     def collect(self, state: "PlantState") -> list[TelemetryReading]:
         timestamp = state.time_s
 
-        return [
+        readings = [
             TelemetryReading(
                 timestamp_s=timestamp,
                 variable="reactor_power",
@@ -134,3 +137,7 @@ class TelemetryCollector:
                 unit="MW",
             ),
         ]
+
+        self.readings.extend(readings)
+
+        return readings

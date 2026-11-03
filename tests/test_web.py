@@ -53,3 +53,24 @@ def test_simulation_step_accepts_heat_removal():
     simulation = app.config["SIMULATION"]
 
     assert simulation.state().time_s == 0.1
+
+def test_telemetry_endpoint_returns_readings():
+    app = create_app()
+    client = app.test_client()
+
+    client.post(
+        "/simulation/step",
+        data={
+            "dt_s": "0.1",
+            "heat_removed_mw": "0.0",
+        },
+    )
+
+    response = client.get("/simulation/telemetry")
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert len(data) == 20
+    assert data[0]["timestamp_s"] == 0.1
