@@ -88,3 +88,56 @@ button {
 button:hover {
     opacity: 0.85;
 }
+
+.controls {
+    background: white;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.controls form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 1rem;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.control-group label {
+    font-weight: bold;
+}
+
+.control-group input {
+    width: 140px;
+    padding: 0.65rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.controls button {
+    margin-bottom: 0;
+}
+
+.status-card .value {
+    text-transform: uppercase;
+}
+
+.status-full_power {
+    color: #15803d;
+}
+
+.status-shutdown {
+    color: #ca8a04;
+}
+
+.status-scram {
+    color: #dc2626;
+}

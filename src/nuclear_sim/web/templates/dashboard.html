@@ -3,135 +3,140 @@
 {% block title %}Dashboard | Nuclear Simulation{% endblock %}
 
 {% block content %}
-    <h2>Dashboard de la planta nuclear</h2>
+<h2>Dashboard de la planta nuclear</h2>
+
+<section class="controls">
+    <h3>Controles de simulación</h3>
 
     <form method="post" action="{{ url_for('simulation.step') }}">
-        <label for="dt_s">Paso de simulación (s):</label>
+        <div class="control-group">
+            <label for="dt_s">Paso de simulación (s):</label>
+            <input
+                type="number"
+                id="dt_s"
+                name="dt_s"
+                value="0.1"
+                min="0.001"
+                step="0.001"
+            >
+        </div>
 
-        <input
-            type="number"
-            id="dt_s"
-            name="dt_s"
-            value="0.1"
-            min="0.001"
-            step="0.001"
-        >
-
-        <label for="heat_removed_mw">Calor retirado (MW):</label>
-
-        <input
-            type="number"
-            id="heat_removed_mw"
-            name="heat_removed_mw"
-            value="0.0"
-            min="0"
-            step="0.1"
-        >
+        <div class="control-group">
+            <label for="heat_removed_mw">Calor retirado (MW):</label>
+            <input
+                type="number"
+                id="heat_removed_mw"
+                name="heat_removed_mw"
+                value="0.0"
+                min="0"
+                step="0.1"
+            >
+        </div>
 
         <button type="submit">▶ Ejecutar paso</button>
     </form>
+</section>
 
-    <section>
-        <h3>Estado general</h3>
+<section>
+    <h3>Estado del reactor</h3>
 
-        <div class="dashboard-grid">
-
-            <article class="card">
-                <h3>Estado del reactor</h3>
-                <div class="value">
-                    {{ state.reactor_status }}
-                </div>
-            </article>
-
-            <article class="card">
-                <h3>Tiempo de simulación</h3>
-                <div class="value">
-                    {{ "%.2f"|format(state.time_s) }} s
-                </div>
-            </article>
-
-            <article class="card">
-                <h3>Temperatura</h3>
-                <div class="value">
-                    {{ "%.2f"|format(state.temperature_k) }} K
-                </div>
-            </article>
-
-            <article class="card">
-                <h3>Potencia del reactor</h3>
-                <div class="value">
-                    {{ "%.2f"|format(state.power_mw) }} MW
-                </div>
-            </article>
-
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Estado</h3>
+            <div class="value">-{{ state.reactor_status }}>
+                {{ state.reactor_status }}
+            </div>
         </div>
-    </section>
 
-
-    <section>
-        <h3>Potencia eléctrica</h3>
-
-        <div class="dashboard-grid">
-
-            <article class="card">
-                <h3>Potencia eléctrica</h3>
-                <div class="value">
-                    {{ "%.2f"|format(state.electrical_power_mw) }} MW
-                </div>
-            </article>
-
-            <article class="card">
-                <h3>Potencia auxiliar</h3>
-                <div class="value">
-                    {{ "%.2f"|format(state.auxiliary_power_mw) }} MW
-                </div>
-            </article>
-
-            <article class="card">
-                <h3>Potencia neta</h3>
-                <div class="value">
-                    {{ "%.2f"|format(state.net_electrical_power_mw) }} MW
-                </div>
-            </article>
-
+        <div class="card">
+            <h3>Tiempo</h3>
+            <div class="value">{{ "%.2f"|format(state.time_s) }} s</div>
         </div>
-    </section>
 
-
-    <section>
-        <h3>Dinámica nuclear</h3>
-
-        <div class="dashboard-grid">
-
-            <article class="card">
-                <h3>Reactividad externa</h3>
-                <div class="value">
-                    {{ "%.6f"|format(state.external_reactivity) }}
-                </div>
-            </article>
-
-            <article class="card">
-                <h3>Reactividad térmica</h3>
-                <div class="value">
-                    {{ "%.6f"|format(state.temperature_reactivity) }}
-                </div>
-            </article>
-
-            <article class="card">
-                <h3>Reactividad total</h3>
-                <div class="value">
-                    {{ "%.6f"|format(state.total_reactivity) }}
-                </div>
-            </article>
-
-            <article class="card">
-                <h3>Población neutrónica</h3>
-                <div class="value">
-                    {{ "%.4e"|format(state.neutron_population) }}
-                </div>
-            </article>
-
+        <div class="card">
+            <h3>Temperatura</h3>
+            <div class="value">{{ "%.2f"|format(state.temperature_k) }} K</div>
         </div>
-    </section>
 
+        <div class="card">
+            <h3>Población neutrónica</h3>
+            <div class="value">{{ "%.4f"|format(state.neutron_population) }}</div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <h3>Potencia</h3>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Potencia del reactor</h3>
+            <div class="value">{{ "%.2f"|format(state.power_mw) }} MW</div>
+        </div>
+
+        <div class="card">
+            <h3>Potencia eléctrica</h3>
+            <div class="value">{{ "%.2f"|format(state.electrical_power_mw) }} MW</div>
+        </div>
+
+        <div class="card">
+            <h3>Potencia auxiliar</h3>
+            <div class="value">{{ "%.2f"|format(state.auxiliary_power_mw) }} MW</div>
+        </div>
+
+        <div class="card">
+            <h3>Potencia neta</h3>
+            <div class="value">{{ "%.2f"|format(state.net_electrical_power_mw) }} MW</div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <h3>Reactividad</h3>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Externa</h3>
+            <div class="value">{{ "%.6f"|format(state.external_reactivity) }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Térmica</h3>
+            <div class="value">{{ "%.6f"|format(state.temperature_reactivity) }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Total</h3>
+            <div class="value">{{ "%.6f"|format(state.total_reactivity) }}</div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <h3>Variables térmicas</h3>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Potencia transferida</h3>
+            <div class="value">{{ "%.2f"|format(state.transferred_power_mw) }} MW</div>
+        </div>
+
+        <div class="card">
+            <h3>Calor perdido</h3>
+            <div class="value">{{ "%.2f"|format(state.lost_thermal_power_mw) }} MW</div>
+        </div>
+
+        <div class="card">
+            <h3>Potencia térmica útil</h3>
+            <div class="value">{{ "%.2f"|format(state.useful_thermal_power_mw) }} MW</div>
+        </div>
+
+        <div class="card">
+            <h3>Temperatura salida refrigerante</h3>
+            <div class="value">
+                {{ "%.2f"|format(state.coolant_outlet_temperature_k) }} K
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}
