@@ -35,3 +35,21 @@ def test_simulation_step_accepts_custom_dt():
     simulation = app.config["SIMULATION"]
 
     assert simulation.state().time_s == 1.0
+
+def test_simulation_step_accepts_heat_removal():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.post(
+        "/simulation/step",
+        data={
+            "dt_s": "0.1",
+            "heat_removed_mw": "10.0",
+        },
+    )
+
+    assert response.status_code == 302
+
+    simulation = app.config["SIMULATION"]
+
+    assert simulation.state().time_s == 0.1

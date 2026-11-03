@@ -10,8 +10,9 @@ def step():
 
     try:
         dt_s = float(request.form.get("dt_s", "0.1"))
+        heat_removed_mw = float(request.form.get("heat_removed_mw", "0.0"))
 
-        if dt_s <= 0:
+        if dt_s <= 0 or heat_removed_mw < 0:
             raise ValueError
 
     except ValueError:
@@ -19,7 +20,7 @@ def step():
 
     simulation.step(
         dt_s=dt_s,
-        heat_removed_mw=0.0,
+        heat_removed_mw=heat_removed_mw,
     )
 
     return redirect(url_for("dashboard.index"))
