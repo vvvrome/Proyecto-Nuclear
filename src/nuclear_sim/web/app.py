@@ -1,5 +1,5 @@
 from flask import Flask
-
+import os
 from nuclear_sim.plant.reactor import Reactor
 from nuclear_sim.plant.simulation import PlantSimulation
 from nuclear_sim.thermal.thermal_model import ThermalModel
@@ -18,7 +18,10 @@ from nuclear_sim.web.routes.fisica_curso import fisica_curso_bp
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = "nuclear-simulation-development-key"
+    app.config["SECRET_KEY"] = os.environ.get(
+        "NUCLEAR_SIM_SECRET_KEY",
+        "nuclear-simulation-development-key",
+    )
     app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
     app.jinja_env.globals["list_files"] = list_files
 

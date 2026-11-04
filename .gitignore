@@ -111,3 +111,9 @@ plots/
 output/
 outputs/
 results/
+
+# ==============================
+# Academic uploaded files
+# ==============================
+
+data/academic_files/
