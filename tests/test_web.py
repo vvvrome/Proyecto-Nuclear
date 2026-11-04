@@ -74,3 +74,77 @@ def test_telemetry_endpoint_returns_readings():
 
     assert len(data) == 20
     assert data[0]["timestamp_s"] == 0.1
+
+def test_asir_subject_returns_200():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get("/asir/primero/m00377/")
+
+    assert response.status_code == 200
+
+
+def test_asir_unknown_subject_returns_404():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get("/asir/primero/no-existe/")
+
+    assert response.status_code == 404
+
+
+def test_fisica_course_returns_200():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get("/fisica/segundo/")
+
+    assert response.status_code == 200
+
+
+def test_fisica_all_courses_return_200():
+    app = create_app()
+    client = app.test_client()
+
+    courses = [
+        "primero",
+        "segundo",
+        "tercero",
+        "cuarto",
+    ]
+
+    for course in courses:
+        response = client.get(f"/fisica/{course}/")
+
+        assert response.status_code == 200
+
+
+def test_fisica_subject_returns_200():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get(
+        "/fisica/tercero/fisica-cuantica-i/"
+    )
+
+    assert response.status_code == 200
+
+
+def test_fisica_unknown_course_returns_404():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get("/fisica/quinto/")
+
+    assert response.status_code == 404
+
+
+def test_fisica_unknown_subject_returns_404():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get(
+        "/fisica/segundo/asignatura-inexistente/"
+    )
+
+    assert response.status_code == 404
