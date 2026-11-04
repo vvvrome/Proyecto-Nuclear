@@ -10,11 +10,11 @@ from nuclear_sim.telemetry.collector import TelemetryCollector
 from nuclear_sim.web.routes.asir import asir_bp
 from nuclear_sim.web.routes.tfg_asir import tfg_asir_bp
 from nuclear_sim.web.routes.fisica import fisica_bp
-from nuclear_sim.web.routes.fisica_primero import fisica_primero_bp
 from nuclear_sim.web.routes.fisica_asignatura import fisica_asignatura_bp
 from nuclear_sim.web.routes.files import files_bp
 from nuclear_sim.web.file_storage import list_files
 from nuclear_sim.web.routes.asir_asignatura import asir_asignatura_bp
+from nuclear_sim.web.routes.fisica_curso import fisica_curso_bp
 
 def create_app() -> Flask:
     app = Flask(__name__)
@@ -45,9 +45,9 @@ def create_app() -> Flask:
     app.register_blueprint(asir_bp)
     app.register_blueprint(tfg_asir_bp)
     app.register_blueprint(fisica_bp)
-    app.register_blueprint(fisica_primero_bp)
     app.register_blueprint(fisica_asignatura_bp)
     app.register_blueprint(files_bp)
     app.register_blueprint(asir_asignatura_bp)
-    
+    app.register_blueprint(fisica_curso_bp)
+
     return app

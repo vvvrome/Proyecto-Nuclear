@@ -11,39 +11,35 @@
     </p>
 
     <section>
-        <div class="dashboard-grid">
+        <div class="card-grid">
+            {% for curso, nombre in [
+                ("primero", "1.º Curso"),
+                ("segundo", "2.º Curso"),
+                ("tercero", "3.º Curso"),
+                ("cuarto", "4.º Curso")
+            ] %}
 
-            <a href="{{ url_for('fisica_primero.index') }}" class="card card-link">
-                <h3>1.º Curso</h3>
-                <p>
-                    Fundamentos matemáticos, físicos, programación,
-                    experimentación y análisis de datos.
-                </p>
+            <a
+                href="{{ url_for(
+                    'fisica_curso.index',
+                    curso=curso
+                ) }}"
+                class="card-link"
+            >
+                <article class="card">
+
+                    <h3>{{ nombre }}</h3>
+
+                    {% if curso == "cuarto" %}
+                        <p>Asignaturas y TFG</p>
+                    {% else %}
+                        <p>Asignaturas del {{ nombre | lower }}</p>
+                    {% endif %}
+
+                </article>
             </a>
 
-            <div class="card">
-                <h3>2.º Curso</h3>
-                <p>
-                    Mecánica, electromagnetismo, termodinámica,
-                    ecuaciones diferenciales, métodos numéricos y óptica.
-                </p>
-            </div>
-
-            <div class="card">
-                <h3>3.º Curso</h3>
-                <p>
-                    Física cuántica, física estadística, electrónica,
-                    modelización y estructura de la materia.
-                </p>
-            </div>
-
-            <div class="card">
-                <h3>4.º Curso</h3>
-                <p>
-                    Ciencia de datos, física atómica y molecular,
-                    mecánica cuántica, optativas, prácticas y TFG.
-                </p>
-            </div>
+            {% endfor %}
 
         </div>
     </section>

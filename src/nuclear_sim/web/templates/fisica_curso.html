@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ nombre_curso }} | Física{% endblock %}
+
+{% block content %}
+
+<section class="subject-page">
+
+    <div class="page-header">
+        <div>
+            <h2>{{ nombre_curso }}</h2>
+            <p>Asignaturas del curso</p>
+        </div>
+
+        <a
+            href="{{ url_for('fisica.index') }}"
+            class="back-button"
+        >
+            ← Volver
+        </a>
+    </div>
+
+    <div class="card-grid">
+
+        {% for slug, asignatura in asignaturas.items() %}
+
+        <a
+            href="{{ url_for(
+                'fisica_asignatura.index',
+                curso=curso,
+                slug=slug
+            ) }}"
+            class="card-link"
+        >
+            <article class="card">
+
+                <h3>{{ asignatura.nombre }}</h3>
+
+                <p>{{ asignatura.ects }} ECTS</p>
+
+            </article>
+        </a>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endblock %}
