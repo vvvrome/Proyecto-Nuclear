@@ -148,3 +148,106 @@ def test_fisica_unknown_subject_returns_404():
     )
 
     assert response.status_code == 404
+
+def test_fisica_practicas_externas_i_returns_200():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get(
+        "/fisica/cuarto/practicas-academicas-externas-i/"
+    )
+
+    assert response.status_code == 200
+
+
+def test_fisica_practicas_externas_ii_returns_200():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get(
+        "/fisica/cuarto/practicas-academicas-externas-ii/"
+    )
+
+    assert response.status_code == 200
+
+
+def test_fisica_tfg_returns_200():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get(
+        "/fisica/cuarto/trabajo-fin-de-grado/"
+    )
+
+    assert response.status_code == 200
+
+
+def test_fisica_fourth_year_elective_returns_200():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get(
+        "/fisica/cuarto/astrofisica-cosmologia/"
+    )
+
+    assert response.status_code == 200
+
+def test_fisica_practicas_externas_ii_shows_practice_categories():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get(
+        "/fisica/cuarto/practicas-academicas-externas-ii/"
+    )
+
+    assert response.status_code == 200
+
+    html = response.get_data(as_text=True)
+
+    assert "Documentacion" in html
+    assert "Memoria" in html
+    assert "Evaluacion" in html
+
+    assert "Resumen" not in html
+    assert "Temario" not in html
+    assert "Apuntes" not in html
+    assert "Ejercicios" not in html
+
+
+def test_fisica_tfg_shows_tfg_categories():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get(
+        "/fisica/cuarto/trabajo-fin-de-grado/"
+    )
+
+    assert response.status_code == 200
+
+    html = response.get_data(as_text=True)
+
+    assert "Propuesta" in html
+    assert "Bibliografia" in html
+    assert "Documentacion" in html
+    assert "Memoria" in html
+    assert "Presentacion" in html
+
+    assert "Ejercicios" not in html
+
+
+def test_fisica_elective_shows_academic_categories():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get(
+        "/fisica/cuarto/astrofisica-cosmologia/"
+    )
+
+    assert response.status_code == 200
+
+    html = response.get_data(as_text=True)
+
+    assert "Resumen" in html
+    assert "Temario" in html
+    assert "Apuntes" in html
+    assert "Ejercicios" in html

@@ -209,3 +209,29 @@ def test_get_storage_path_rejects_nested_path():
             "algebra-i",
             "resumen",
         )
+
+def test_get_storage_path_accepts_academic_categories(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "nuclear_sim.web.file_storage.BASE_STORAGE",
+        tmp_path,
+    )
+
+    categories = [
+        "documentacion",
+        "memoria",
+        "evaluacion",
+        "propuesta",
+        "bibliografia",
+        "presentacion",
+    ]
+
+    for category in categories:
+        path = get_storage_path(
+            "fisica",
+            "cuarto",
+            "astrofisica-cosmologia",
+            category,
+        )
+
+        assert path.exists()
+        assert path.is_dir()

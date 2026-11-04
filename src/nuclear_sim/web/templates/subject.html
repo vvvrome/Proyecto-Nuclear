@@ -24,7 +24,17 @@
 
     <div class="file-categories">
 
-        {% for category in ["resumen", "temario", "apuntes", "ejercicios"] %}
+        {% if subject.tipo in ["obligatoria", "optativa"] %}
+            {% set categories = ["resumen", "temario", "apuntes", "ejercicios"] %}
+        {% elif subject.tipo in ["practicas", "optativa_practicas"] %}
+            {% set categories = ["documentacion", "memoria", "evaluacion"] %}
+        {% elif subject.tipo == "tfg" %}
+            {% set categories = ["propuesta", "bibliografia", "documentacion", "memoria", "presentacion"] %}
+        {% else %}
+            {% set categories = ["resumen", "temario", "apuntes", "ejercicios"] %}
+        {% endif %}
+
+        {% for category in categories %}
 
         <section class="file-category">
 

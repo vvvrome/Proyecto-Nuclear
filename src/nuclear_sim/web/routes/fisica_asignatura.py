@@ -224,7 +224,7 @@ ASIGNATURAS = {
             "codigo": "practicas-academicas-externas-ii",
             "nombre": "Prácticas Académicas Externas II",
             "ects": 6,
-            "tipo": "optativa",
+            "tipo": "optativa_practicas",
         },
         "fisica-tierra-atmosfera": {
             "codigo": "fisica-tierra-atmosfera",
