@@ -20,30 +20,115 @@
         </a>
     </div>
 
-    <div class="card-grid">
+    {% if curso == "cuarto" %}
 
-        {% for slug, asignatura in asignaturas.items() %}
+        <h3 class="section-title">Asignaturas obligatorias</h3>
 
-        <a
-            href="{{ url_for(
-                'fisica_asignatura.index',
-                curso=curso,
-                slug=slug
-            ) }}"
-            class="card-link"
-        >
-            <article class="card">
+        <div class="card-grid">
 
-                <h3>{{ asignatura.nombre }}</h3>
+            {% for slug, asignatura in asignaturas.items() %}
+                {% if asignatura.tipo == "obligatoria" %}
 
-                <p>{{ asignatura.ects }} ECTS</p>
+                    <a
+                        href="{{ url_for(
+                            'fisica_asignatura.index',
+                            curso=curso,
+                            slug=slug
+                        ) }}"
+                        class="card-link"
+                    >
+                        <article class="card">
+                            <h3>{{ asignatura.nombre }}</h3>
+                            <p>{{ asignatura.ects }} ECTS</p>
+                        </article>
+                    </a>
 
-            </article>
-        </a>
+                {% endif %}
+            {% endfor %}
 
-        {% endfor %}
+        </div>
 
-    </div>
+        <h3 class="section-title">Asignaturas optativas</h3>
+
+        <div class="card-grid">
+
+            {% for slug, asignatura in asignaturas.items() %}
+                {% if asignatura.tipo == "optativa" or asignatura.tipo == "optativa_practicas" %}
+
+                    <a
+                        href="{{ url_for(
+                            'fisica_asignatura.index',
+                            curso=curso,
+                            slug=slug
+                        ) }}"
+                        class="card-link"
+                    >
+                        <article class="card">
+                            <h3>{{ asignatura.nombre }}</h3>
+                            <p>{{ asignatura.ects }} ECTS</p>
+
+                            {% if asignatura.tipo == "optativa_practicas" %}
+                                <span>Prácticas</span>
+                            {% endif %}
+                        </article>
+                    </a>
+
+                {% endif %}
+            {% endfor %}
+
+        </div>
+
+        <h3 class="section-title">Trabajo Fin de Grado</h3>
+
+        <div class="card-grid">
+
+            {% for slug, asignatura in asignaturas.items() %}
+                {% if asignatura.tipo == "tfg" %}
+
+                    <a
+                        href="{{ url_for(
+                            'fisica_asignatura.index',
+                            curso=curso,
+                            slug=slug
+                        ) }}"
+                        class="card-link"
+                    >
+                        <article class="card">
+                            <h3>{{ asignatura.nombre }}</h3>
+                            <p>{{ asignatura.ects }} ECTS</p>
+                        </article>
+                    </a>
+
+                {% endif %}
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="card-grid">
+
+            {% for slug, asignatura in asignaturas.items() %}
+
+                <a
+                    href="{{ url_for(
+                        'fisica_asignatura.index',
+                        curso=curso,
+                        slug=slug
+                    ) }}"
+                    class="card-link"
+                >
+                    <article class="card">
+                        <h3>{{ asignatura.nombre }}</h3>
+                        <p>{{ asignatura.ects }} ECTS</p>
+                    </article>
+                </a>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
 
 </section>
 
