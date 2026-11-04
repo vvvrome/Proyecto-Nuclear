@@ -43,8 +43,8 @@
     <div class="dashboard-grid">
         <div class="card">
             <h3>Estado</h3>
-            <div class="value">-{{ state.reactor_status }}>
-                {{ state.reactor_status }}
+            <div class="value">{{ state.reactor_status }}
+                {{ state.reactor_status | upper }}
             </div>
         </div>
 
@@ -139,4 +139,64 @@
         </div>
     </div>
 </section>
+<section>
+    <h2>Evolución de potencia del reactor</h2>
+
+    <div class="card">
+        <canvas id="powerChart"></canvas>
+    </div>
+</section>
+
+<script>
+async function loadPowerChart() {
+    const response = await fetch("{{ url_for('simulation.telemetry') }}");
+    const readings = await response.json();
+
+    const powerReadings = readings.filter(
+        reading => reading.variable === "reactor_power"
+    );
+
+    const labels = powerReadings.map(
+        reading => reading.timestamp_s
+    );
+
+    const values = powerReadings.map(
+        reading => reading.value
+    );
+
+    const ctx = document.getElementById("powerChart");
+
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Potencia del reactor (MW)",
+                data: values,
+                tension: 0.2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: "Tiempo (s)"
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: "Potencia (MW)"
+                    }
+                }
+            }
+        }
+    });
+}
+
+loadPowerChart();
+</script>
 {% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}TFG ASIR | Nuclear Simulation{% endblock %}
+
+{% block content %}
+
+<h2>Trabajo Fin de Grado - ASIR</h2>
+<a href="{{ url_for('asir.index') }}" class="back-button">
+    ← Volver a ASIR
+</a>
+
+<p>
+    Proyecto de administración de sistemas informáticos en red
+    aplicado a la simulación y supervisión de una planta nuclear.
+</p>
+
+<section>
+    <div class="dashboard-grid">
+
+        <div class="card">
+            <h3>Proyecto</h3>
+            <p>
+                Simulación de una planta nuclear y su sistema
+                de supervisión.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Arquitectura</h3>
+            <p>
+                Organización de los componentes, servicios,
+                módulos y comunicaciones del proyecto.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Simulación</h3>
+            <p>
+                Modelos de reactor, dinámica, térmica,
+                instrumentación y telemetría.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Seguridad</h3>
+            <p>
+                Controles de seguridad, monitorización y
+                detección de anomalías.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Base de datos</h3>
+            <p>
+                Persistencia de ejecuciones, lecturas de
+                telemetría e incidentes.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Web / SCADA</h3>
+            <p>
+                Interfaz web para supervisar el estado de
+                la simulación.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Pruebas</h3>
+            <p>
+                Pruebas automatizadas para verificar el
+                funcionamiento del sistema.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Documentación</h3>
+            <p>
+                Memoria, arquitectura, metodología,
+                resultados y conclusiones.
+            </p>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}{{ subject.nombre }} | Nuclear Simulation{% endblock %}
+
+{% block content %}
+
+<section class="subject-page">
+
+    <div class="page-header">
+        <div>
+            <h2>{{ subject.nombre }}</h2>
+            {% if subject.codigo %}
+                <p>{{ subject.codigo }}</p>
+            {% endif %}
+        </div>
+
+        <a
+            href="{{ url_for(area + '.index') if area == 'asir' else url_for('fisica.index') }}"
+            class="back-button"
+        >
+            ← Volver
+        </a>
+    </div>
+
+    <div class="file-categories">
+
+        {% for category in ["resumen", "temario", "apuntes", "ejercicios"] %}
+
+        <section class="file-category">
+
+            <div class="category-header">
+                <h3>{{ category | capitalize }}</h3>
+            </div>
+
+            <div class="file-list">
+
+                {% set files = list_files(area, course, subject_slug, category) %}
+
+                {% if files %}
+
+                    {% for filename in files %}
+
+                    <div class="file-item">
+
+                        <div class="file-info">
+
+                            <span class="file-icon">
+                                📄
+                            </span>
+
+                            <span class="file-name">
+                                {{ filename }}
+                            </span>
+
+                        </div>
+
+                        <div class="file-actions">
+
+                            {% set extension = filename.rsplit(".", 1)[-1].lower() %}
+
+                            {% if extension in ["txt", "pdf", "png", "jpg", "jpeg"] %}
+
+                            <a
+                                href="{{ url_for(
+                                    'files.view_file',
+                                    area=area,
+                                    course=course,
+                                    subject=subject_slug,
+                                    category=category,
+                                    filename=filename
+                                ) }}"
+                                class="file-button"
+                            >
+                                Abrir
+                            </a>
+
+                            {% endif %}
+
+                            <a
+                                href="{{ url_for(
+                                    'files.download_file',
+                                    area=area,
+                                    course=course,
+                                    subject=subject_slug,
+                                    category=category,
+                                    filename=filename
+                                ) }}"
+                                class="file-button"
+                            >
+                                Descargar
+                            </a>
+
+                            <form
+                                method="post"
+                                action="{{ url_for('files.delete_uploaded_file') }}"
+                                class="delete-form"
+                                onsubmit="return confirm('¿Seguro que quieres eliminar {{ filename }}?');"
+                            >
+
+                                <input
+                                    type="hidden"
+                                    name="area"
+                                    value="{{ area }}"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="course"
+                                    value="{{ course }}"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="subject"
+                                    value="{{ subject_slug }}"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="category"
+                                    value="{{ category }}"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="filename"
+                                    value="{{ filename }}"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="return_url"
+                                    value="{{ request.path }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="file-delete"
+                                >
+                                    Eliminar
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <p class="empty-files">
+                        No hay archivos en esta categoría.
+                    </p>
+
+                {% endif %}
+
+            </div>
+
+            <form
+                method="post"
+                action="{{ url_for('files.upload_file') }}"
+                enctype="multipart/form-data"
+                class="upload-form"
+            >
+
+                <input
+                    type="hidden"
+                    name="area"
+                    value="{{ area }}"
+                >
+
+                <input
+                    type="hidden"
+                    name="course"
+                    value="{{ course }}"
+                >
+
+                <input
+                    type="hidden"
+                    name="subject"
+                    value="{{ subject_slug }}"
+                >
+
+                <input
+                    type="hidden"
+                    name="category"
+                    value="{{ category }}"
+                >
+
+                <input
+                    type="hidden"
+                    name="return_url"
+                    value="{{ request.path }}"
+                >
+
+                <input
+                    type="file"
+                    name="file"
+                    required
+                >
+
+                <button
+                    type="submit"
+                    class="file-button"
+                >
+                    Subir archivo
+                </button>
+
+            </form>
+
+        </section>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ filename }} | Nuclear Simulation{% endblock %}
+
+{% block content %}
+
+<section class="file-viewer">
+
+    <div class="file-viewer-header">
+        <div>
+            <h2>{{ filename }}</h2>
+            <p>Visor de archivo</p>
+        </div>
+
+        <a
+            href="{{ request.referrer or url_for('dashboard.index') }}"
+            class="back-button"
+        >
+            ← Volver
+        </a>
+    </div>
+
+    <div class="file-viewer-content">
+
+        {% if file_type == "text" %}
+
+        <pre class="text-viewer">{{ content }}</pre>
+
+        {% endif %}
+
+    </div>
+
+</section>
+
+{% endblock %}

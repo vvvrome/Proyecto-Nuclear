@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}ASIR | Nuclear Simulation{% endblock %}
+
+{% block content %}
+
+<h2>Administración de Sistemas Informáticos en Red</h2>
+
+<p>
+    Asignaturas del ciclo formativo.
+</p>
+
+<section>
+
+<div class="card-grid">
+
+    {% for slug, asignatura in asignaturas.items() %}
+
+    <a
+        href="{{ url_for('asir_asignatura.index',slug=slug) }}"
+        class="card-link"
+    >
+        <article class="card">
+
+            <h3>{{ asignatura.nombre }}</h3>
+
+            <p>{{ asignatura.codigo }}</p>
+
+        </article>
+    </a>
+
+    {% endfor %}
+
+</div>
+
+</section>
+
+<section>
+    <h2>Trabajo Fin de Grado</h2>
+
+    <a href="{{ url_for('tfg_asir.index') }}" class="card card-link">
+        <h3>TFG ASIR</h3>
+        <p>
+            Proyecto final del ciclo, documentación, arquitectura,
+            desarrollo, seguridad, pruebas y resultados.
+        </p>
+    </a>
+</section>
+
+{% endblock %}

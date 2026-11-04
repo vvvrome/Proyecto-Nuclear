@@ -1,0 +1,51 @@
+    {% extends "base.html" %}
+
+    {% block title %}Física | Nuclear Simulation{% endblock %}
+
+    {% block content %}
+
+    <h2>Grado en Física</h2>
+
+    <p>
+        Organización de los cuatro cursos del Grado en Física.
+    </p>
+
+    <section>
+        <div class="dashboard-grid">
+
+            <a href="{{ url_for('fisica_primero.index') }}" class="card card-link">
+                <h3>1.º Curso</h3>
+                <p>
+                    Fundamentos matemáticos, físicos, programación,
+                    experimentación y análisis de datos.
+                </p>
+            </a>
+
+            <div class="card">
+                <h3>2.º Curso</h3>
+                <p>
+                    Mecánica, electromagnetismo, termodinámica,
+                    ecuaciones diferenciales, métodos numéricos y óptica.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>3.º Curso</h3>
+                <p>
+                    Física cuántica, física estadística, electrónica,
+                    modelización y estructura de la materia.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>4.º Curso</h3>
+                <p>
+                    Ciencia de datos, física atómica y molecular,
+                    mecánica cuántica, optativas, prácticas y TFG.
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+    {% endblock %}
