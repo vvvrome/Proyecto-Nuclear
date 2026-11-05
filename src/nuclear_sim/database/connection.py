@@ -10,7 +10,7 @@ def create_connection() -> MySQLConnection:
     return mysql.connector.connect(
         host=os.getenv("MYSQL_HOST", "127.0.0.1"),
         port=int(os.getenv("MYSQL_PORT", "3306")),
-        user=os.getenv("MYSQL_USER", "root"),
+        user=os.getenv("MYSQL_USER", ""),
         password=os.getenv("MYSQL_PASSWORD", ""),
-        database=os.getenv("MYSQL_DATABASE", "nuclear_sim"),
+        database=os.getenv("MYSQL_DATABASE", ""),
     )
