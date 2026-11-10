@@ -35,10 +35,16 @@ class ThermalModel:
                 "La capacidad térmica debe ser positiva y finita."
             )
 
-        self.temperature_k = float(initial_temperature_k)
+        self.initial_temperature_k = float(initial_temperature_k)
+        self.temperature_k = self.initial_temperature_k
         self.thermal_capacity_mj_per_k = float(
             thermal_capacity_mj_per_k
         )
+
+    def reset(self) -> None:
+        """Restaura el estado térmico a sus condiciones iniciales."""
+
+        self.temperature_k = self.initial_temperature_k
 
     def step(
         self,

@@ -233,6 +233,18 @@ class ReactorDynamics:
             ),
         )
 
+    def reset(self) -> ReactorDynamicsState:
+        """Restaura la dinámica del reactor a sus condiciones iniciales."""
+
+        self.reactor_kinetics.reset()
+        self.thermal_model.reset()
+
+        self._external_reactivity = 0.0
+        self._control_reactivity = 0.0
+        self._scrammed = False
+
+        return self.state()
+
     def set_control_reactivity(self, reactivity: float) -> None:
         """Establece la reactividad aportada por el sistema de control."""
 

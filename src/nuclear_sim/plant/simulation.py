@@ -252,6 +252,26 @@ class PlantSimulation:
 
         return self._state
 
+    def reset(self) -> PlantState:
+        """Restaura la planta a sus condiciones iniciales."""
+
+        if self.reactor_dynamics is not None:
+            self.reactor_dynamics.reset()
+
+        if self.telemetry_collector is not None:
+            self.telemetry_collector.reset()
+
+        self._safety_state = None
+
+        # Reconstruye el estado de la planta en t = 0.
+        # Un paso de duración cero permite recalcular el ciclo
+        # de potencia sin avanzar la simulación.
+        return self.step(
+            dt_s=0.0,
+            heat_removed_mw=0.0,
+            external_reactivity=0.0,
+        )
+
     def set_reactor_power(self, power_fraction: float):
         """Establece la potencia del reactor mediante el controlador."""
 

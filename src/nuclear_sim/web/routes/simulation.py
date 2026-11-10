@@ -10,9 +10,16 @@ def step():
 
     try:
         dt_s = float(request.form.get("dt_s", "0.1"))
-        heat_removed_mw = float(request.form.get("heat_removed_mw", "0.0"))
+        heat_removed_mw = float(request.form.get("heat_removed_mw", "3000.0"))
+        external_reactivity = float(
+            request.form.get("external_reactivity", "0.0")
+        )
 
-        if dt_s <= 0 or heat_removed_mw < 0:
+        if (
+            dt_s <= 0
+            or heat_removed_mw < 0
+            or not (-0.01 <= external_reactivity <= 0.01)
+        ):
             raise ValueError
 
     except ValueError:
@@ -21,9 +28,25 @@ def step():
     simulation.step(
         dt_s=dt_s,
         heat_removed_mw=heat_removed_mw,
+        external_reactivity=external_reactivity,
     )
 
+    return redirect(
+        url_for(
+            "dashboard.index",
+            dt_s=dt_s,
+            heat_removed_mw=heat_removed_mw,
+            external_reactivity=external_reactivity,
+        )
+    )
+
+@simulation_bp.post("/reset")
+def reset():
+    simulation = current_app.config["SIMULATION"]
+    simulation.reset()
+
     return redirect(url_for("dashboard.index"))
+
 
 @simulation_bp.get("/telemetry")
 def telemetry():

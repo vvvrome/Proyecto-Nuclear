@@ -12,6 +12,11 @@ class TelemetryCollector:
     def __init__(self) -> None:
         self.readings: list[TelemetryReading] = []
 
+    def reset(self) -> None:
+        """Elimina las lecturas de telemetría de la simulación actual."""
+
+        self.readings.clear()
+
     def collect(self, state: "PlantState") -> list[TelemetryReading]:
         timestamp = state.time_s
 

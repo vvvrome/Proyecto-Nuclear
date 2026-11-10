@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, render_template
+from flask import Blueprint, current_app, render_template, request
 
 
 dashboard_bp = Blueprint("dashboard", __name__)
@@ -19,4 +19,7 @@ def index() -> str:
         "dashboard.html",
         state=state,
         openmc_result=openmc_result,
+        dt_s=request.args.get("dt_s", "0.1"),
+        heat_removed_mw=request.args.get("heat_removed_mw", "3000.0"),
+        external_reactivity=request.args.get("external_reactivity", "0.0"),
     )

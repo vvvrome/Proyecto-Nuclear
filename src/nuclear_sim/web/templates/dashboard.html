@@ -15,7 +15,7 @@
                 type="number"
                 id="dt_s"
                 name="dt_s"
-                value="0.1"
+                value="{{ dt_s }}"
                 min="0.001"
                 step="0.001"
             >
@@ -27,13 +27,30 @@
                 type="number"
                 id="heat_removed_mw"
                 name="heat_removed_mw"
-                value="0.0"
+                value="{{ heat_removed_mw }}"
                 min="0"
                 step="0.1"
             >
         </div>
 
+        <div class="control-group">
+            <label for="external_reactivity">Reactividad externa (ρ):</label>
+            <input
+                type="number"
+                id="external_reactivity"
+                name="external_reactivity"
+                value="{{ external_reactivity }}"
+                min="-0.01"
+                max="0.01"
+                step="0.0001"
+            >
+        </div>
+
         <button type="submit">▶ Ejecutar paso</button>
+    </form>
+
+    <form method="post" action="{{ url_for('simulation.reset') }}">
+        <button type="submit">↻ Reiniciar simulación</button>
     </form>
 </section>
 
