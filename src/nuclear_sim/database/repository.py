@@ -106,6 +106,94 @@ class MySQLRepository:
 
         finally:
             cursor.close()
+
+    def get_openmc_result(
+        self,
+        run_id: int,
+    ) -> dict | None:
+        """Obtiene el resultado OpenMC asociado a una ejecución."""
+
+        cursor = self.connection.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    run_id,
+                    statepoint_path,
+                    keff,
+                    keff_std_dev,
+                    batches,
+                    particles,
+                    created_at
+                FROM openmc_results
+                WHERE run_id = %s
+                """,
+                (run_id,),
+            )
+
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return {
+                "id": row[0],
+                "run_id": row[1],
+                "statepoint_path": row[2],
+                "keff": row[3],
+                "keff_std_dev": row[4],
+                "batches": row[5],
+                "particles": row[6],
+                "created_at": row[7],
+            }
+
+        finally:
+            cursor.close()
+
+    def get_latest_openmc_result(self) -> dict | None:
+        """Obtiene el resultado OpenMC más reciente."""
+
+        cursor = self.connection.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    run_id,
+                    statepoint_path,
+                    keff,
+                    keff_std_dev,
+                    batches,
+                    particles,
+                    created_at
+                FROM openmc_results
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+                """
+            )
+
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return {
+                "id": row[0],
+                "run_id": row[1],
+                "statepoint_path": row[2],
+                "keff": row[3],
+                "keff_std_dev": row[4],
+                "batches": row[5],
+                "particles": row[6],
+                "created_at": row[7],
+            }
+
+        finally:
+            cursor.close()
+
     def save_reading(
         self,
         run_id: int,

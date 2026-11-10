@@ -43,3 +43,14 @@ def telemetry():
             for reading in readings
         ]
     )
+
+@simulation_bp.get("/openmc/<int:run_id>")
+def openmc_result(run_id: int):
+    repository = current_app.config["REPOSITORY"]
+
+    result = repository.get_openmc_result(run_id)
+
+    if result is None:
+        return jsonify({"error": "OpenMC result not found"}), 404
+
+    return jsonify(result)

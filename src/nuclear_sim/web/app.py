@@ -15,6 +15,8 @@ from nuclear_sim.web.routes.files import files_bp
 from nuclear_sim.web.file_storage import list_files
 from nuclear_sim.web.routes.asir_asignatura import asir_asignatura_bp
 from nuclear_sim.web.routes.fisica_curso import fisica_curso_bp
+from nuclear_sim.database.connection import create_connection
+from nuclear_sim.database.repository import MySQLRepository
 
 def create_app() -> Flask:
     app = Flask(__name__)
@@ -42,6 +44,9 @@ def create_app() -> Flask:
         reactor_dynamics=dynamics,
         telemetry_collector=telemetry,
     )
+    connection = create_connection()
+    app.config["DB_CONNECTION"] = connection
+    app.config["REPOSITORY"] = MySQLRepository(connection)
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(simulation_bp)

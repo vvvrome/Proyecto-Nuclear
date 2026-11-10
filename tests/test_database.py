@@ -733,3 +733,58 @@ def test_simulation_recorder_run_and_save_openmc(monkeypatch):
 
     assert saved_run_id == 42
     assert saved_result == expected_result
+
+@pytest.mark.integration
+def test_repository_returns_latest_openmc_result():
+    connection = create_connection()
+    run_id = None
+
+    try:
+        repository = MySQLRepository(connection)
+
+        run_id = repository.create_run(
+            initial_power_fraction=1.0,
+            description="Prueba último resultado OpenMC",
+        )
+
+        result = OpenMCResult(
+            statepoint_path="data/openmc/test_run/statepoint.50.h5",
+            keff=1.309444033757898,
+            keff_std_dev=0.004917954181157573,
+            batches=50,
+            particles=1000,
+        )
+
+        repository.save_openmc_result(
+            run_id=run_id,
+            result=result,
+        )
+
+        latest = repository.get_latest_openmc_result()
+
+        assert latest is not None
+        assert latest["run_id"] == run_id
+        assert latest["statepoint_path"] == (
+            "data/openmc/test_run/statepoint.50.h5"
+        )
+        assert latest["keff"] == pytest.approx(1.309444033757898)
+        assert latest["keff_std_dev"] == pytest.approx(
+            0.004917954181157573
+        )
+        assert latest["batches"] == 50
+        assert latest["particles"] == 1000
+
+    finally:
+        if run_id is not None:
+            cursor = connection.cursor()
+
+            try:
+                cursor.execute(
+                    "DELETE FROM simulation_runs WHERE id = %s",
+                    (run_id,),
+                )
+                connection.commit()
+            finally:
+                cursor.close()
+
+        connection.close()

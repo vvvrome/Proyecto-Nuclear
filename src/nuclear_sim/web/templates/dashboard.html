@@ -139,6 +139,59 @@
         </div>
     </div>
 </section>
+
+<section>
+    <h3>Resultados OpenMC</h3>
+
+    {% if openmc_result %}
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>k-effective</h3>
+            <div class="value">
+                {{ "%.6f"|format(openmc_result.keff) }}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Incertidumbre</h3>
+            <div class="value">
+                ± {{ "%.6f"|format(openmc_result.keff_std_dev) }}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Batches</h3>
+            <div class="value">
+                {{ openmc_result.batches }}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Partículas por batch</h3>
+            <div class="value">
+                {{ openmc_result.particles }}
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Ejecución OpenMC</h3>
+        <p>
+            Run ID: {{ openmc_result.run_id }}
+        </p>
+        <p>
+            Statepoint:
+            {{ openmc_result.statepoint_path }}
+        </p>
+    </div>
+
+    {% else %}
+    <div class="card">
+        <p>No hay resultados OpenMC almacenados.</p>
+    </div>
+    {% endif %}
+</section>
+
 <section>
     <h2>Evolución de potencia del reactor</h2>
 
