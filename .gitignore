@@ -111,7 +111,7 @@ plots/
 output/
 outputs/
 results/
-
+data/openmc/
 # ==============================
 # Academic uploaded files
 # ==============================

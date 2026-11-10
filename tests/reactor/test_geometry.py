@@ -1,7 +1,8 @@
 import openmc
-import pytest
 
 from nuclear_sim.reactor.geometry import (
+    AXIAL_HALF_LENGTH_CM,
+    MODERATOR_OUTER_RADIUS_CM,
     CLADDING_OUTER_RADIUS_CM,
     FUEL_RADIUS_CM,
     GAP_OUTER_RADIUS_CM,
@@ -49,14 +50,18 @@ def test_radii_are_ordered():
 
 
 def test_create_pwr_geometry():
-    geometry = create_pwr_geometry()
+    materials = create_pwr_materials()
+
+    geometry = create_pwr_geometry(materials)
 
     assert isinstance(geometry, openmc.Geometry)
     assert geometry.root_universe is not None
 
 
 def test_geometry_contains_fuel_pin():
-    geometry = create_pwr_geometry()
+    materials = create_pwr_materials()
+
+    geometry = create_pwr_geometry(materials)
 
     root_universe = geometry.root_universe
 
@@ -64,10 +69,33 @@ def test_geometry_contains_fuel_pin():
 
 
 def test_geometry_can_be_exported(tmp_path):
-    geometry = create_pwr_geometry()
+    materials = create_pwr_materials()
+
+    geometry = create_pwr_geometry(materials)
 
     geometry.export_to_xml(
         path=str(tmp_path / "geometry.xml"),
     )
 
     assert (tmp_path / "geometry.xml").exists()
+
+def test_geometry_has_reflective_boundaries():
+    materials = create_pwr_materials()
+
+    universe = create_fuel_pin(materials)
+
+    surfaces = []
+
+    for cell in universe.cells.values():
+        surfaces.extend(cell.region.get_surfaces().values())
+
+    boundary_types = {
+        surface.boundary_type
+        for surface in surfaces
+    }
+
+    assert "reflective" in boundary_types
+
+def test_axial_dimensions_are_valid():
+    assert AXIAL_HALF_LENGTH_CM > 0.0
+    assert MODERATOR_OUTER_RADIUS_CM > CLADDING_OUTER_RADIUS_CM

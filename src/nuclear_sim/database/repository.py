@@ -64,7 +64,48 @@ class MySQLRepository:
         
         finally:
             cursor.close()
+    def save_openmc_result(
+        self,
+        run_id: int,
+        result,
+    ) -> int:
+        """Guarda el resultado principal de una simulación OpenMC."""
 
+        cursor = self.connection.cursor()
+
+        try:
+            cursor.execute(
+                """
+                INSERT INTO openmc_results (
+                    run_id,
+                    statepoint_path,
+                    keff,
+                    keff_std_dev,
+                    batches,
+                    particles
+                )
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    run_id,
+                    str(result.statepoint_path),
+                    result.keff,
+                    result.keff_std_dev,
+                    result.batches,
+                    result.particles,
+                ),
+            )
+
+            self.connection.commit()
+
+            return cursor.lastrowid
+
+        except Exception:
+            self.connection.rollback()
+            raise
+
+        finally:
+            cursor.close()
     def save_reading(
         self,
         run_id: int,

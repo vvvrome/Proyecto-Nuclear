@@ -1,7 +1,9 @@
 from nuclear_sim.plant.simulation import PlantSimulation
 from nuclear_sim.database.repository import MySQLRepository
 from .collector import TelemetryCollector
-
+from nuclear_sim.reactor.results import OpenMCResult
+from pathlib import Path
+from nuclear_sim.reactor.runner import run_openmc
 
 class SimulationRecorder:
     """Ejecuta una simulación y persiste su telemetría en MySQL."""
@@ -44,6 +46,39 @@ class SimulationRecorder:
         
 
         return self.run_id
+
+    def save_openmc_result(
+        self,
+        result: OpenMCResult,
+    ) -> int:
+        """Guarda el resultado OpenMC de la ejecución actual."""
+
+        if self.run_id is None:
+            raise RuntimeError(
+                "La ejecución no ha sido iniciada. "
+                "Llama a start_run() antes de guardar resultados OpenMC."
+            )
+
+        return self.repository.save_openmc_result(
+            run_id=self.run_id,
+            result=result,
+        )
+
+    def run_and_save_openmc(
+        self,
+        output_directory: str | Path,
+    ) -> int:
+        """Ejecuta OpenMC y guarda su resultado en la ejecución actual."""
+
+        if self.run_id is None:
+            raise RuntimeError(
+                "La ejecución no ha sido iniciada. "
+                "Llama a start_run() antes de ejecutar OpenMC."
+            )
+
+        result = run_openmc(output_directory)
+
+        return self.save_openmc_result(result)
 
     def step(
         self,

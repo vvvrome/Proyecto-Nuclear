@@ -10,6 +10,7 @@ from nuclear_sim.plant.plant_instrumentation import PlantInstrumentation
 from nuclear_sim.plant.plant_controller import PlantController
 from nuclear_sim.telemetry.collector import TelemetryCollector
 
+
 @dataclass(frozen=True)
 class PlantState:
     time_s: float
@@ -40,7 +41,7 @@ class PlantState:
     rejected_heat_mw: float = 0.0
     condensed_heat_mw: float = 0.0
     condenser_outlet_temperature_k: float = 0.0
-    
+
     pump_hydraulic_power_mw: float = 0.0
 
 
@@ -73,7 +74,7 @@ class PlantSimulation:
             electrical_power_mw=0.0,
             auxiliary_power_mw=0.0,
             net_electrical_power_mw=0.0,
-            energy_balance = None,
+            energy_balance=None,
         )
 
         if self.safety_integration is not None:
@@ -225,7 +226,6 @@ class PlantSimulation:
             condenser_outlet_temperature_k=(
                 condenser_outlet_temperature_k
             ),
-
             pump_hydraulic_power_mw=pump_hydraulic_power_mw,
         )
 
@@ -251,23 +251,27 @@ class PlantSimulation:
             self.telemetry_collector.collect(self._state)
 
         return self._state
+
     def set_reactor_power(self, power_fraction: float):
         """Establece la potencia del reactor mediante el controlador."""
 
         if self.controller is None:
-            raise RuntimeError("PlantSimulation no tiene un controlador configurado.")
+            raise RuntimeError(
+                "PlantSimulation no tiene un controlador configurado."
+            )
 
         return self.controller.set_reactor_power(
             power_fraction=power_fraction,
             timestamp_s=self._state.time_s,
         )
 
-
     def scram(self):
         """Activa el SCRAM mediante el controlador."""
 
         if self.controller is None:
-            raise RuntimeError("PlantSimulation no tiene un controlador configurado.")
+            raise RuntimeError(
+                "PlantSimulation no tiene un controlador configurado."
+            )
 
         return self.controller.scram(
             timestamp_s=self._state.time_s,

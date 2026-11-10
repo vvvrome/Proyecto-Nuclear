@@ -18,6 +18,7 @@ from nuclear_sim.thermal.heat_transfer import HeatTransferModel
 from nuclear_sim.thermal.steam_generator import SteamGenerator
 from nuclear_sim.thermal.turbine import Turbine
 from nuclear_sim.thermal.generator import Generator
+from nuclear_sim.reactor.results import OpenMCResult
 
 class FailingSimulation:
     def __init__(self):
@@ -606,3 +607,129 @@ def test_repository_rolls_back_when_save_reading_fails():
         )
 
     assert connection.rollback_called is True
+
+@pytest.mark.integration
+def test_mysql_repository_persists_openmc_result():
+    connection = create_connection()
+    run_id = None
+
+    try:
+        repository = MySQLRepository(connection)
+
+        run_id = repository.create_run(
+            initial_power_fraction=1.0,
+            description="Test de integración de resultados OpenMC",
+        )
+
+        result = OpenMCResult(
+            statepoint_path="data/openmc/test_run/statepoint.50.h5",
+            keff=1.309444033757898,
+            keff_std_dev=0.004917954181157573,
+            batches=50,
+            particles=1000,
+        )
+
+        result_id = repository.save_openmc_result(
+            run_id=run_id,
+            result=result,
+        )
+
+        assert result_id is not None
+
+        cursor = connection.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    run_id,
+                    statepoint_path,
+                    keff,
+                    keff_std_dev,
+                    batches,
+                    particles
+                FROM openmc_results
+                WHERE id = %s
+                """,
+                (result_id,),
+            )
+
+            row = cursor.fetchone()
+
+        finally:
+            cursor.close()
+
+        assert row is not None
+        assert row[0] == run_id
+        assert row[1] == "data/openmc/test_run/statepoint.50.h5"
+        assert row[2] == pytest.approx(1.309444033757898)
+        assert row[3] == pytest.approx(0.004917954181157573)
+        assert row[4] == 50
+        assert row[5] == 1000
+
+    finally:
+        if run_id is not None:
+            cursor = connection.cursor()
+
+            try:
+                cursor.execute(
+                    "DELETE FROM simulation_runs WHERE id = %s",
+                    (run_id,),
+                )
+                connection.commit()
+            finally:
+                cursor.close()
+
+        connection.close()
+
+def test_simulation_recorder_run_and_save_openmc(monkeypatch):
+    class FakeRepository:
+        def __init__(self):
+            self.saved_result = None
+
+        def save_openmc_result(self, run_id, result):
+            self.saved_result = (run_id, result)
+            return 123
+
+    repository = FakeRepository()
+
+    simulation = PlantSimulation(
+        reactor=Reactor(rated_power_mw=3000),
+        thermal_model=ThermalModel(),
+    )
+
+    recorder = SimulationRecorder(
+        simulation=simulation,
+        repository=repository,
+    )
+
+    recorder.run_id = 42
+
+    expected_result = OpenMCResult(
+        statepoint_path="data/openmc/test_run/statepoint.50.h5",
+        keff=1.309444033757898,
+        keff_std_dev=0.004917954181157573,
+        batches=50,
+        particles=1000,
+    )
+
+    def fake_run_openmc(output_directory):
+        assert output_directory == "data/openmc/test_run"
+        return expected_result
+
+    monkeypatch.setattr(
+        "nuclear_sim.telemetry.simulation_recorder.run_openmc",
+        fake_run_openmc,
+    )
+
+    result_id = recorder.run_and_save_openmc(
+        "data/openmc/test_run",
+    )
+
+    assert result_id == 123
+    assert repository.saved_result is not None
+
+    saved_run_id, saved_result = repository.saved_result
+
+    assert saved_run_id == 42
+    assert saved_result == expected_result
