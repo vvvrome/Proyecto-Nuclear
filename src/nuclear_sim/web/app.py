@@ -24,6 +24,12 @@ from nuclear_sim.nuclear.openmc_config import (
 from nuclear_sim.nuclear.openmc_reactivity import (
     build_openmc_reactivity_model,
 )
+from nuclear_sim.thermal.coolant import Coolant
+from nuclear_sim.thermal.generator import Generator
+from nuclear_sim.thermal.heat_transfer import HeatTransferModel
+from nuclear_sim.thermal.power_cycle import PowerCycle
+from nuclear_sim.thermal.steam_generator import SteamGenerator
+from nuclear_sim.thermal.turbine import Turbine
 
 def create_app() -> Flask:
     app = Flask(__name__)
@@ -44,7 +50,17 @@ def create_app() -> Flask:
 
     reactor = Reactor(rated_power_mw=3000)
     thermal_model = ThermalModel()
-
+    power_cycle = PowerCycle(
+        coolant=Coolant(
+            mass_flow_kg_s=1000.0,
+            inlet_temperature_k=573.15,
+            pressure_mpa=15.5,
+        ),
+        heat_transfer=HeatTransferModel(),
+        steam_generator=SteamGenerator(),
+        turbine=Turbine(),
+        generator=Generator(),
+    )
     dynamics = ReactorDynamics(
         rated_power_mw=3000,
         thermal_model=thermal_model,
@@ -58,6 +74,7 @@ def create_app() -> Flask:
     app.config["SIMULATION"] = PlantSimulation(
         reactor=reactor,
         thermal_model=thermal_model,
+        power_cycle=power_cycle,
         reactor_dynamics=dynamics,
         telemetry_collector=telemetry,
     )
