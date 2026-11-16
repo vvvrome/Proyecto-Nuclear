@@ -17,6 +17,10 @@ from nuclear_sim.web.routes.asir_asignatura import asir_asignatura_bp
 from nuclear_sim.web.routes.fisica_curso import fisica_curso_bp
 from nuclear_sim.database.connection import create_connection
 from nuclear_sim.database.repository import MySQLRepository
+from nuclear_sim.nuclear.openmc_config import (
+    DEFAULT_U235_ENRICHMENT,
+    REFERENCE_KEFF,
+)
 from nuclear_sim.nuclear.openmc_reactivity import (
     build_openmc_reactivity_model,
 )
@@ -35,7 +39,7 @@ def create_app() -> Flask:
 
     openmc_reactivity_model = build_openmc_reactivity_model(
         repository=repository,
-        reference_keff=1.3094440337578979,
+        reference_keff=REFERENCE_KEFF,
     )
 
     reactor = Reactor(rated_power_mw=3000)
@@ -45,6 +49,7 @@ def create_app() -> Flask:
         rated_power_mw=3000,
         thermal_model=thermal_model,
         initial_power_fraction=1.0,
+        u235_enrichment=DEFAULT_U235_ENRICHMENT,
         openmc_reactivity_model=openmc_reactivity_model,
     )
 
