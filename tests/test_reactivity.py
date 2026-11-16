@@ -1,88 +1,56 @@
+import math
+
 import pytest
 
-from nuclear_sim.plant.reactivity import Reactivity
+from nuclear_sim.nuclear.reactivity import keff_to_reactivity
 
 
-def test_zero_reactivity():
-    model = Reactivity()
-
-    state = model.state(0.0)
-
-    assert state.reactivity == pytest.approx(0.0)
-    assert state.pcm == pytest.approx(0.0)
-    assert state.dollars == pytest.approx(0.0)
+REFERENCE_KEFF = 1.3094440337578979
 
 
-def test_positive_reactivity_in_pcm():
-    model = Reactivity()
-
-    state = model.state(0.001)
-
-    assert state.pcm == pytest.approx(100.0)
-
-
-def test_negative_reactivity_in_pcm():
-    model = Reactivity()
-
-    state = model.state(-0.001)
-
-    assert state.pcm == pytest.approx(-100.0)
-
-
-def test_reactivity_in_dollars():
-    model = Reactivity(beta_effective=0.0065)
-
-    state = model.state(0.0065)
-
-    assert state.dollars == pytest.approx(1.0)
-
-
-def test_half_dollar_reactivity():
-    model = Reactivity(beta_effective=0.0065)
-
-    state = model.state(0.00325)
-
-    assert state.dollars == pytest.approx(0.5)
-
-
-def test_keff_one_is_critical():
-    model = Reactivity()
-
-    rho = model.from_keff(1.0)
+def test_reference_keff_has_zero_differential_reactivity():
+    rho = keff_to_reactivity(
+        keff=REFERENCE_KEFF,
+        reference_keff=REFERENCE_KEFF,
+    )
 
     assert rho == pytest.approx(0.0)
 
 
-def test_keff_above_one_is_positive():
-    model = Reactivity()
-
-    rho = model.from_keff(1.001)
+def test_higher_keff_produces_positive_reactivity():
+    rho = keff_to_reactivity(
+        keff=1.34,
+        reference_keff=REFERENCE_KEFF,
+    )
 
     assert rho > 0.0
 
 
-def test_keff_below_one_is_negative():
-    model = Reactivity()
-
-    rho = model.from_keff(0.999)
+def test_lower_keff_produces_negative_reactivity():
+    rho = keff_to_reactivity(
+        keff=1.28,
+        reference_keff=REFERENCE_KEFF,
+    )
 
     assert rho < 0.0
 
 
-def test_invalid_keff_is_rejected():
-    model = Reactivity()
-
+@pytest.mark.parametrize("keff", [0.0, -1.0, math.inf, -math.inf, math.nan])
+def test_invalid_keff_is_rejected(keff):
     with pytest.raises(ValueError):
-        model.from_keff(0.0)
+        keff_to_reactivity(
+            keff=keff,
+            reference_keff=REFERENCE_KEFF,
+        )
 
 
-def test_invalid_beta_is_rejected():
+@pytest.mark.parametrize(
+    "reference_keff",
+    [0.0, -1.0, math.inf, -math.inf, math.nan],
+)
+def test_invalid_reference_keff_is_rejected(reference_keff):
     with pytest.raises(ValueError):
-        Reactivity(beta_effective=0.0)
-
-
-def test_nan_reactivity_is_rejected():
-    model = Reactivity()
-
-    with pytest.raises(ValueError):
-        model.state(float("nan"))
+        keff_to_reactivity(
+            keff=REFERENCE_KEFF,
+            reference_keff=reference_keff,
+        )

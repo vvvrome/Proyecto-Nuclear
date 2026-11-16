@@ -16,7 +16,42 @@ class FakeRepository:
             "particles": 1000,
             "created_at": None,
         }
-
+    def get_openmc_reference_points(self):
+        return [
+            {
+                "id": 52,
+                "run_id": 332,
+                "keff": 1.2964897814756546,
+                "keff_std_dev": 0.00477025113307639,
+                "batches": 50,
+                "particles": 1000,
+                "fuel_temperature_K": 900.0,
+                "moderator_temperature_K": 573.0,
+                "u235_enrichment": 3.5,
+            },
+            {
+                "id": 53,
+                "run_id": 333,
+                "keff": 1.3094440337578979,
+                "keff_std_dev": 0.004917954181157431,
+                "batches": 50,
+                "particles": 1000,
+                "fuel_temperature_K": 900.0,
+                "moderator_temperature_K": 573.0,
+                "u235_enrichment": 4.0,
+            },
+            {
+                "id": 54,
+                "run_id": 334,
+                "keff": 1.3412139507633685,
+                "keff_std_dev": 0.00468682205004236,
+                "batches": 50,
+                "particles": 1000,
+                "fuel_temperature_K": 900.0,
+                "moderator_temperature_K": 573.0,
+                "u235_enrichment": 4.5,
+            },
+        ]
 
 def test_dashboard_displays_latest_openmc_result(monkeypatch):
     monkeypatch.setattr(

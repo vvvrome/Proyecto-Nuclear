@@ -68,6 +68,9 @@ class MySQLRepository:
         self,
         run_id: int,
         result,
+        fuel_temperature_K: float | None = None,
+        moderator_temperature_K: float | None = None,
+        u235_enrichment: float | None = None,
     ) -> int:
         """Guarda el resultado principal de una simulación OpenMC."""
 
@@ -82,9 +85,12 @@ class MySQLRepository:
                     keff,
                     keff_std_dev,
                     batches,
-                    particles
+                    particles,
+                    fuel_temperature_K,
+                    moderator_temperature_K,
+                    u235_enrichment
                 )
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     run_id,
@@ -93,6 +99,9 @@ class MySQLRepository:
                     result.keff_std_dev,
                     result.batches,
                     result.particles,
+                    fuel_temperature_K,
+                    moderator_temperature_K,
+                    u235_enrichment,
                 ),
             )
 
@@ -126,6 +135,9 @@ class MySQLRepository:
                     keff_std_dev,
                     batches,
                     particles,
+                    fuel_temperature_K,
+                    moderator_temperature_K,
+                    u235_enrichment,
                     created_at
                 FROM openmc_results
                 WHERE run_id = %s
@@ -146,7 +158,10 @@ class MySQLRepository:
                 "keff_std_dev": row[4],
                 "batches": row[5],
                 "particles": row[6],
-                "created_at": row[7],
+                "fuel_temperature_K": row[7],
+                "moderator_temperature_K": row[8],
+                "u235_enrichment": row[9],
+                "created_at": row[10],
             }
 
         finally:
@@ -168,6 +183,9 @@ class MySQLRepository:
                     keff_std_dev,
                     batches,
                     particles,
+                    fuel_temperature_K,
+                    moderator_temperature_K,
+                    u235_enrichment,
                     created_at
                 FROM openmc_results
                 ORDER BY created_at DESC, id DESC
@@ -188,7 +206,10 @@ class MySQLRepository:
                 "keff_std_dev": row[4],
                 "batches": row[5],
                 "particles": row[6],
-                "created_at": row[7],
+                "fuel_temperature_K": row[7],
+                "moderator_temperature_K": row[8],
+                "u235_enrichment": row[9],
+                "created_at": row[10],
             }
 
         finally:
@@ -406,6 +427,52 @@ class MySQLRepository:
                 )
                 for row in cursor.fetchall()
             ]
+        finally:
+            cursor.close()
+
+    def get_openmc_reference_points(self) -> list[dict]:
+        """Obtiene los puntos de referencia OpenMC ordenados por enriquecimiento."""
+
+        cursor = self.connection.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    run_id,
+                    keff,
+                    keff_std_dev,
+                    batches,
+                    particles,
+                    fuel_temperature_K,
+                    moderator_temperature_K,
+                    u235_enrichment
+                FROM openmc_results
+                WHERE u235_enrichment IS NOT NULL
+                  AND fuel_temperature_K IS NOT NULL
+                  AND moderator_temperature_K IS NOT NULL
+                ORDER BY u235_enrichment ASC
+                """
+            )
+
+            rows = cursor.fetchall()
+
+            return [
+                {
+                    "id": row[0],
+                    "run_id": row[1],
+                    "keff": row[2],
+                    "keff_std_dev": row[3],
+                    "batches": row[4],
+                    "particles": row[5],
+                    "fuel_temperature_K": row[6],
+                    "moderator_temperature_K": row[7],
+                    "u235_enrichment": row[8],
+                }
+                for row in rows
+            ]
+
         finally:
             cursor.close()
 

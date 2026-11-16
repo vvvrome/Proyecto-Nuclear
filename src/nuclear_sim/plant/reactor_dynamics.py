@@ -6,6 +6,9 @@ from nuclear_sim.plant.reactor_kinetics import ReactorKinetics
 from nuclear_sim.nuclear.kinetics.temperature_feedback import (
     TemperatureFeedback,
 )
+from nuclear_sim.nuclear.openmc_reactivity import (
+    OpenMCReactivityModel,
+)
 from nuclear_sim.thermal.thermal_model import ThermalModel
 
 
@@ -20,6 +23,7 @@ class ReactorDynamicsState:
     power_mw: float
     temperature_k: float
     external_reactivity: float
+    openmc_reactivity: float
     temperature_reactivity: float
     total_reactivity: float
 
@@ -34,7 +38,16 @@ class ReactorDynamics:
         thermal_model: ThermalModel | None = None,
         temperature_feedback: TemperatureFeedback | None = None,
         reactor_kinetics: ReactorKinetics | None = None,
+        u235_enrichment: float = 4.0,
+        openmc_reactivity_model: OpenMCReactivityModel | None = None,
     ) -> None:
+        if (
+            not math.isfinite(u235_enrichment)
+            or u235_enrichment <= 0.0
+        ):
+            raise ValueError(
+                "El enriquecimiento de U-235 debe de ser positivo y finito."
+            )
         if (
             not math.isfinite(rated_power_mw)
             or rated_power_mw <= 0
@@ -77,6 +90,8 @@ class ReactorDynamics:
         self._external_reactivity = 0.0
         self._scrammed = False
         self._control_reactivity = 0.0
+        self._u235_enrichment = float(u235_enrichment)
+        self._openmc_reactivity_model = openmc_reactivity_model
     @property
     def time_s(self) -> float:
         """Tiempo actual de simulación."""
@@ -117,11 +132,20 @@ class ReactorDynamics:
             )
         )
 
+        openmc_reactivity = (
+            self._openmc_reactivity_model
+            .reactivity_for_enrichment(
+                self._u235_enrichment
+            )
+            if self._openmc_reactivity_model is not None
+            else 0.0
+        )
+
         total_reactivity = (
             self._external_reactivity
             + self._control_reactivity
             + temperature_reactivity
-            
+            + openmc_reactivity
         )
 
         reactor_state = self.reactor_kinetics.state()
@@ -140,6 +164,7 @@ class ReactorDynamics:
             power_mw=reactor_state.power_mw,
             temperature_k=self.temperature_k,
             external_reactivity=self._external_reactivity,
+            openmc_reactivity=openmc_reactivity,
             temperature_reactivity=temperature_reactivity,
             total_reactivity=total_reactivity,
         )
@@ -153,7 +178,7 @@ class ReactorDynamics:
         """Avanza la dinámica acoplada del reactor."""
         if self._scrammed:
             return self.state()
-        
+
         if not math.isfinite(dt_s) or dt_s < 0:
             raise ValueError(
                 "El intervalo de tiempo debe ser finito y no negativo."
@@ -186,10 +211,20 @@ class ReactorDynamics:
             )
         )
 
+        openmc_reactivity = (
+            self._openmc_reactivity_model
+            .reactivity_for_enrichment(
+                self._u235_enrichment
+            )
+            if self._openmc_reactivity_model is not None
+            else 0.0
+        )
+
         total_reactivity = (
             self._external_reactivity
             + temperature_reactivity
             + self._control_reactivity
+            + openmc_reactivity
         )
 
         reactor_state = self.reactor_kinetics.advance(
@@ -217,6 +252,7 @@ class ReactorDynamics:
             power_mw=reactor_state.power_mw,
             temperature_k=thermal_state.temperature_k,
             external_reactivity=self._external_reactivity,
+            openmc_reactivity=openmc_reactivity,
             temperature_reactivity=(
                 self.temperature_feedback
                 .calculate_temperature_reactivity(
@@ -230,6 +266,7 @@ class ReactorDynamics:
                 .calculate_temperature_reactivity(
                     thermal_state.temperature_k
                 )
+                + openmc_reactivity
             ),
         )
 

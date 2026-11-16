@@ -4,6 +4,8 @@ from .collector import TelemetryCollector
 from nuclear_sim.reactor.results import OpenMCResult
 from pathlib import Path
 from nuclear_sim.reactor.runner import run_openmc
+from nuclear_sim.reactor.materials import ReactorMaterialConfig
+from nuclear_sim.reactor.simulation import ReactorSimulationConfig
 
 class SimulationRecorder:
     """Ejecuta una simulación y persiste su telemetría en MySQL."""
@@ -67,6 +69,7 @@ class SimulationRecorder:
     def run_and_save_openmc(
         self,
         output_directory: str | Path,
+        material_config: ReactorMaterialConfig | None = None,
     ) -> int:
         """Ejecuta OpenMC y guarda su resultado en la ejecución actual."""
 
@@ -76,9 +79,25 @@ class SimulationRecorder:
                 "Llama a start_run() antes de ejecutar OpenMC."
             )
 
-        result = run_openmc(output_directory)
+        if material_config is None:
+            material_config = ReactorMaterialConfig()
 
-        return self.save_openmc_result(result)
+        simulation_config = ReactorSimulationConfig(
+            materials=material_config,
+        )
+
+        result = run_openmc(
+            output_directory,
+            config=simulation_config,
+        )
+
+        return self.repository.save_openmc_result(
+            run_id=self.run_id,
+            result=result,
+            fuel_temperature_K=material_config.fuel_temperature,
+            moderator_temperature_K=material_config.coolant_temperature,
+            u235_enrichment=material_config.enrichment_u235,
+        )
 
     def step(
         self,

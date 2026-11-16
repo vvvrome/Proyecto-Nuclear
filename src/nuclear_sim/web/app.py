@@ -17,6 +17,9 @@ from nuclear_sim.web.routes.asir_asignatura import asir_asignatura_bp
 from nuclear_sim.web.routes.fisica_curso import fisica_curso_bp
 from nuclear_sim.database.connection import create_connection
 from nuclear_sim.database.repository import MySQLRepository
+from nuclear_sim.nuclear.openmc_reactivity import (
+    build_openmc_reactivity_model,
+)
 
 def create_app() -> Flask:
     app = Flask(__name__)
@@ -27,6 +30,14 @@ def create_app() -> Flask:
     app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
     app.jinja_env.globals["list_files"] = list_files
 
+    connection = create_connection()
+    repository = MySQLRepository(connection)
+
+    openmc_reactivity_model = build_openmc_reactivity_model(
+        repository=repository,
+        reference_keff=1.3094440337578979,
+    )
+
     reactor = Reactor(rated_power_mw=3000)
     thermal_model = ThermalModel()
 
@@ -34,6 +45,7 @@ def create_app() -> Flask:
         rated_power_mw=3000,
         thermal_model=thermal_model,
         initial_power_fraction=1.0,
+        openmc_reactivity_model=openmc_reactivity_model,
     )
 
     telemetry = TelemetryCollector()
@@ -44,9 +56,8 @@ def create_app() -> Flask:
         reactor_dynamics=dynamics,
         telemetry_collector=telemetry,
     )
-    connection = create_connection()
     app.config["DB_CONNECTION"] = connection
-    app.config["REPOSITORY"] = MySQLRepository(connection)
+    app.config["REPOSITORY"] = repository
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(simulation_bp)

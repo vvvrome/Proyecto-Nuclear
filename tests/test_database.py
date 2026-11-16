@@ -19,6 +19,7 @@ from nuclear_sim.thermal.steam_generator import SteamGenerator
 from nuclear_sim.thermal.turbine import Turbine
 from nuclear_sim.thermal.generator import Generator
 from nuclear_sim.reactor.results import OpenMCResult
+from nuclear_sim.reactor.materials import ReactorMaterialConfig
 
 class FailingSimulation:
     def __init__(self):
@@ -632,6 +633,9 @@ def test_mysql_repository_persists_openmc_result():
         result_id = repository.save_openmc_result(
             run_id=run_id,
             result=result,
+            fuel_temperature_K=900.0,
+            moderator_temperature_K=573.0,
+            u235_enrichment=4.0,
         )
 
         assert result_id is not None
@@ -647,7 +651,10 @@ def test_mysql_repository_persists_openmc_result():
                     keff,
                     keff_std_dev,
                     batches,
-                    particles
+                    particles,
+                    fuel_temperature_K,
+                    moderator_temperature_K,
+                    u235_enrichment
                 FROM openmc_results
                 WHERE id = %s
                 """,
@@ -666,6 +673,9 @@ def test_mysql_repository_persists_openmc_result():
         assert row[3] == pytest.approx(0.004917954181157573)
         assert row[4] == 50
         assert row[5] == 1000
+        assert row[6] == pytest.approx(900.0)
+        assert row[7] == pytest.approx(573.0)
+        assert row[8] == pytest.approx(4.0)
 
     finally:
         if run_id is not None:
@@ -686,9 +696,22 @@ def test_simulation_recorder_run_and_save_openmc(monkeypatch):
     class FakeRepository:
         def __init__(self):
             self.saved_result = None
+            self.saved_conditions = None
 
-        def save_openmc_result(self, run_id, result):
+        def save_openmc_result(
+            self,
+            run_id,
+            result,
+            fuel_temperature_K=None,
+            moderator_temperature_K=None,
+            u235_enrichment=None,
+        ):
             self.saved_result = (run_id, result)
+            self.saved_conditions = (
+                fuel_temperature_K,
+                moderator_temperature_K,
+                u235_enrichment,
+            )
             return 123
 
     repository = FakeRepository()
@@ -713,8 +736,12 @@ def test_simulation_recorder_run_and_save_openmc(monkeypatch):
         particles=1000,
     )
 
-    def fake_run_openmc(output_directory):
+    def fake_run_openmc(output_directory, config=None):
         assert output_directory == "data/openmc/test_run"
+        assert config is not None
+        assert config.materials.enrichment_u235 == 4.0
+        assert config.materials.fuel_temperature == 900.0
+        assert config.materials.coolant_temperature == 573.0
         return expected_result
 
     monkeypatch.setattr(
@@ -724,6 +751,11 @@ def test_simulation_recorder_run_and_save_openmc(monkeypatch):
 
     result_id = recorder.run_and_save_openmc(
         "data/openmc/test_run",
+        material_config=ReactorMaterialConfig(
+            enrichment_u235=4.0,
+            fuel_temperature=900.0,
+            coolant_temperature=573.0,
+        ),
     )
 
     assert result_id == 123
@@ -733,6 +765,11 @@ def test_simulation_recorder_run_and_save_openmc(monkeypatch):
 
     assert saved_run_id == 42
     assert saved_result == expected_result
+    assert repository.saved_conditions == (
+        900.0,
+        573.0,
+        4.0,
+    )
 
 @pytest.mark.integration
 def test_repository_returns_latest_openmc_result():
@@ -758,6 +795,9 @@ def test_repository_returns_latest_openmc_result():
         repository.save_openmc_result(
             run_id=run_id,
             result=result,
+            fuel_temperature_K=900.0,
+            moderator_temperature_K=573.0,
+            u235_enrichment=4.0,
         )
 
         latest = repository.get_latest_openmc_result()
@@ -773,6 +813,9 @@ def test_repository_returns_latest_openmc_result():
         )
         assert latest["batches"] == 50
         assert latest["particles"] == 1000
+        assert latest["fuel_temperature_K"] == pytest.approx(900.0)
+        assert latest["moderator_temperature_K"] == pytest.approx(573.0)
+        assert latest["u235_enrichment"] == pytest.approx(4.0)
 
     finally:
         if run_id is not None:

@@ -5,6 +5,13 @@ import pytest
 from nuclear_sim.nuclear.kinetics.temperature_feedback import (
     TemperatureFeedback,
 )
+from nuclear_sim.nuclear.interpolation import (
+    OpenMCInterpolator,
+    OpenMCReferencePoint,
+)
+from nuclear_sim.nuclear.openmc_reactivity import (
+    OpenMCReactivityModel,
+)
 from nuclear_sim.plant.reactor_dynamics import ReactorDynamics
 from nuclear_sim.plant.reactor_kinetics import ReactorKinetics
 from nuclear_sim.thermal.thermal_model import ThermalModel
@@ -268,3 +275,75 @@ def test_positive_reactivity_increases_power():
     print("REACTIVIDAD:", state.total_reactivity)
 
     assert state.power_mw > initial_power
+
+def create_openmc_reactivity_model():
+    points = [
+        OpenMCReferencePoint(
+            u235_enrichment=3.5,
+            keff=1.2964897814756546,
+        ),
+        OpenMCReferencePoint(
+            u235_enrichment=4.0,
+            keff=1.3094440337578979,
+        ),
+        OpenMCReferencePoint(
+            u235_enrichment=4.5,
+            keff=1.3412139507633685,
+        ),
+    ]
+
+    interpolator = OpenMCInterpolator(points)
+
+    return OpenMCReactivityModel(
+        interpolator=interpolator,
+        reference_keff=1.3094440337578979,
+    )
+
+
+def test_openmc_reference_state_has_zero_reactivity():
+    model = create_openmc_reactivity_model()
+
+    assert model.reactivity_for_enrichment(4.0) == pytest.approx(0.0)
+
+
+def test_openmc_lower_enrichment_has_negative_reactivity():
+    model = create_openmc_reactivity_model()
+
+    assert model.reactivity_for_enrichment(3.5) < 0.0
+
+
+def test_openmc_higher_enrichment_has_positive_reactivity():
+    model = create_openmc_reactivity_model()
+
+    assert model.reactivity_for_enrichment(4.5) > 0.0
+
+
+def test_openmc_reactivity_is_included_in_total_reactivity():
+    model = create_openmc_reactivity_model()
+
+    dynamics = ReactorDynamics(
+        rated_power_mw=3000,
+        u235_enrichment=4.5,
+        openmc_reactivity_model=model,
+    )
+
+    state = dynamics.state()
+
+    assert state.openmc_reactivity > 0.0
+    assert state.total_reactivity == pytest.approx(
+        state.openmc_reactivity
+        + state.temperature_reactivity
+        + state.external_reactivity
+        + dynamics.control_reactivity()
+    )
+
+
+def test_openmc_reactivity_can_be_disabled():
+    dynamics = ReactorDynamics(
+        rated_power_mw=3000,
+        u235_enrichment=4.5,
+    )
+
+    state = dynamics.state()
+
+    assert state.openmc_reactivity == pytest.approx(0.0)
