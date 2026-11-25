@@ -16,15 +16,17 @@ class PlantController:
         reactor: Reactor,
         instrumentation: "PlantInstrumentation | None" = None,
         reactor_dynamics: "ReactorDynamics | None" = None,
-        control_gain: float = 0.006,
+        control_gain: float = 0.002,
         control_reactivity_limit: float = 0.002,
     ) -> None:
         self.reactor = reactor
         self.reactor_dynamics = reactor_dynamics
+
         if control_gain <= 0:
             raise ValueError(
                 "La ganancia de control debe de ser positiva"
             )
+
         if control_reactivity_limit <= 0:
             raise ValueError(
                 "El limite de reactividad debe de ser positivo"
@@ -34,10 +36,18 @@ class PlantController:
         self.control_reactivity_limit = float(
             control_reactivity_limit
         )
-        self.target_power_fraction = (
-            reactor.state().power_mw
-            / reactor.rated_power_mw
-        )
+
+        if reactor_dynamics is not None:
+            dynamics_state = reactor_dynamics.state()
+            self.target_power_fraction = (
+                dynamics_state.power_mw
+                / reactor.rated_power_mw
+            )
+        else:
+            self.target_power_fraction = (
+                reactor.state().power_mw
+                / reactor.rated_power_mw
+            )
 
         if instrumentation is not None:
             self.power_control = instrumentation.system.get_actuator(
@@ -49,10 +59,7 @@ class PlantController:
         else:
             self.power_control = Actuator(
                 name="reactor_power_control",
-                initial_position=(
-                    reactor.state().power_mw
-                    / reactor.rated_power_mw
-                ),
+                initial_position=self.target_power_fraction,
             )
 
             self.scram_actuator = Actuator(
@@ -61,7 +68,7 @@ class PlantController:
             )
 
     def update_control(self) -> float:
-        """Actualiza la reactividad de control segun el error de potencia"""
+        """Actualiza la reactividad de control según el error de potencia."""
 
         if self.reactor_dynamics is None:
             return 0.0
@@ -129,6 +136,29 @@ class PlantController:
             self.reactor_dynamics.scram()
 
         return state
+
+    def reset(self, timestamp_s: float = 0.0):
+        """Restaura el controlador a su estado inicial."""
+
+        self.target_power_fraction = 1.0
+
+        self.power_control.set_position(
+            position=1.0,
+            timestamp_s=timestamp_s,
+        )
+
+        self.scram_actuator.set_position(
+            position=0.0,
+            timestamp_s=timestamp_s,
+        )
+
+        self.reactor.set_power_fraction(1.0)
+
+        if self.reactor_dynamics is not None:
+            self.reactor_dynamics.reset()
+            self.reactor_dynamics.set_control_reactivity(0.0)
+
+        return self.actuator_states()
 
     def reset_scram(self, timestamp_s: float):
         """Restablece la posición del actuador SCRAM."""

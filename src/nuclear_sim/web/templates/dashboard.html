@@ -53,7 +53,58 @@
         <button type="submit">↻ Reiniciar simulación</button>
     </form>
 </section>
+    <h3>Control del reactor</h3>
 
+    <form method="post" action="{{ url_for('simulation.control') }}">
+        <div class="control-group">
+            <label for="power_fraction">Potencia objetivo (%):</label>
+            <input
+                type="number"
+                id="power_fraction"
+                name="power_percent"
+                value="{{ "%.0f"|format(
+                    actuator_states.reactor_power_control.position * 100
+                ) }}"
+                min="0"
+                max="100"
+                step="1"
+            >
+        </div>
+
+        <button type="submit">Aplicar consigna</button>
+    </form>
+
+    <form method="post" action="{{ url_for('simulation.scram') }}">
+        <button type="submit">⚠ SCRAM</button>
+    </form>
+
+    <form method="post" action="{{ url_for('simulation.reset') }}">
+        <button type="submit">↻ Rearmar / reiniciar simulación</button>
+    </form>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Consigna del reactor</h3>
+            <div class="value">
+                {{
+                    "%.0f"|format(
+                        actuator_states.reactor_power_control.position * 100
+                    )
+                }} %
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Actuador SCRAM</h3>
+            <div class="value">
+                {% if actuator_states.scram.position >= 1.0 %}
+                    ACTIVO
+                {% else %}
+                    NORMAL
+                {% endif %}
+            </div>
+        </div>
+    </div>
 <section>
     <h3>Estado del reactor</h3>
 

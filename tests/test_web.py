@@ -1,5 +1,5 @@
 from nuclear_sim.web.app import create_app
-
+import pytest
 
 def test_dashboard_returns_200():
     app = create_app()
@@ -251,3 +251,89 @@ def test_fisica_elective_shows_academic_categories():
     assert "Temario" in html
     assert "Apuntes" in html
     assert "Ejercicios" in html
+
+def test_simulation_control_sets_target_power():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.post(
+        "/simulation/control",
+        data={"power_fraction": "0.5"},
+    )
+
+    assert response.status_code == 302
+
+    simulation = app.config["SIMULATION"]
+
+    assert simulation.controller.target_power_fraction == 0.5
+    assert (
+        simulation.controller.power_control.state().position
+        == 0.5
+    )
+
+
+def test_simulation_scram_activates_scram():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.post("/simulation/scram")
+
+    assert response.status_code == 302
+
+    simulation = app.config["SIMULATION"]
+
+    assert (
+        simulation.controller.scram_actuator.state().position
+        == 1.0
+    )
+
+def test_simulation_control_reduces_power_after_step():
+    app = create_app()
+    client = app.test_client()
+
+    simulation = app.config["SIMULATION"]
+
+    initial_power = simulation.state().power_mw
+
+    response = client.post(
+        "/simulation/control",
+        data={"power_fraction": "0.5"},
+    )
+
+    assert response.status_code == 302
+
+    client.post(
+        "/simulation/step",
+        data={
+            "dt_s": "1.0",
+            "heat_removed_mw": "3000.0",
+        },
+    )
+
+    state = simulation.state()
+
+    assert state.power_mw < initial_power
+
+def test_simulation_scram_stops_power_after_step():
+    app = create_app()
+    client = app.test_client()
+
+    simulation = app.config["SIMULATION"]
+
+    response = client.post("/simulation/scram")
+
+    assert response.status_code == 302
+
+    client.post(
+        "/simulation/step",
+        data={
+            "dt_s": "1.0",
+            "heat_removed_mw": "3000.0",
+        },
+    )
+
+    state = simulation.state()
+
+    assert state.power_mw == pytest.approx(0.0)
+    assert state.reactor_status == "shutdown"
+    assert state.electrical_power_mw == pytest.approx(0.0)

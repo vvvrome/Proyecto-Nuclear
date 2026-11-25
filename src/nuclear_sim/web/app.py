@@ -30,6 +30,7 @@ from nuclear_sim.thermal.heat_transfer import HeatTransferModel
 from nuclear_sim.thermal.power_cycle import PowerCycle
 from nuclear_sim.thermal.steam_generator import SteamGenerator
 from nuclear_sim.thermal.turbine import Turbine
+from nuclear_sim.plant.plant_controller import PlantController
 
 def create_app() -> Flask:
     app = Flask(__name__)
@@ -49,6 +50,7 @@ def create_app() -> Flask:
     )
 
     reactor = Reactor(rated_power_mw=3000)
+    reactor.set_power_fraction(1.0)
     thermal_model = ThermalModel()
     power_cycle = PowerCycle(
         coolant=Coolant(
@@ -68,6 +70,10 @@ def create_app() -> Flask:
         u235_enrichment=DEFAULT_U235_ENRICHMENT,
         openmc_reactivity_model=openmc_reactivity_model,
     )
+    controller = PlantController(
+        reactor=reactor,
+        reactor_dynamics=dynamics,
+    )
 
     telemetry = TelemetryCollector()
 
@@ -76,6 +82,7 @@ def create_app() -> Flask:
         thermal_model=thermal_model,
         power_cycle=power_cycle,
         reactor_dynamics=dynamics,
+        controller=controller,
         telemetry_collector=telemetry,
     )
     app.config["DB_CONNECTION"] = connection

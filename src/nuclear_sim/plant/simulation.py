@@ -23,6 +23,8 @@ class PlantState:
     net_electrical_power_mw: float
 
     external_reactivity: float = 0.0
+    control_reactivity: float = 0.0
+    openmc_reactivity: float = 0.0
     temperature_reactivity: float = 0.0
     total_reactivity: float = 0.0
 
@@ -105,7 +107,7 @@ class PlantSimulation:
         heat_removed_mw: float,
         external_reactivity: float | None = None,
     ) -> PlantState:
-
+        neutron_population = 0.0
         if self.reactor_dynamics is not None:
             if self.controller is not None:
                 self.controller.update_control()
@@ -120,6 +122,8 @@ class PlantSimulation:
             temperature_k = dynamics_state.temperature_k
             neutron_population = dynamics_state.neutron_population
             external_rho = dynamics_state.external_reactivity
+            control_rho = dynamics_state.control_reactivity
+            openmc_rho = dynamics_state.openmc_reactivity
             temperature_rho = dynamics_state.temperature_reactivity
             total_rho = dynamics_state.total_reactivity
 
@@ -138,6 +142,8 @@ class PlantSimulation:
             external_rho = (
                 0.0 if external_reactivity is None else external_reactivity
             )
+            control_rho = 0.0
+            openmc_rho = 0.0
             temperature_rho = 0.0
             total_rho = external_rho
 
@@ -147,8 +153,6 @@ class PlantSimulation:
         auxiliary_power_mw = 0.0
         net_electrical_power_mw = 0.0
         energy_balance = None
-
-        neutron_population = 0.0
 
         transferred_power_mw = 0.0
         lost_thermal_power_mw = 0.0
@@ -208,6 +212,8 @@ class PlantSimulation:
             auxiliary_power_mw=auxiliary_power_mw,
             net_electrical_power_mw=net_electrical_power_mw,
             external_reactivity=external_rho,
+            control_reactivity=control_rho,
+            openmc_reactivity=openmc_rho,
             temperature_reactivity=temperature_rho,
             total_reactivity=total_rho,
             energy_balance=energy_balance,
@@ -257,6 +263,11 @@ class PlantSimulation:
 
         if self.reactor_dynamics is not None:
             self.reactor_dynamics.reset()
+
+        if self.controller is not None:
+            self.controller.reset(
+                timestamp_s=0.0,
+            )
 
         if self.telemetry_collector is not None:
             self.telemetry_collector.reset()

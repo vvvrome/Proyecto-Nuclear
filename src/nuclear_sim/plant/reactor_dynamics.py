@@ -23,6 +23,7 @@ class ReactorDynamicsState:
     power_mw: float
     temperature_k: float
     external_reactivity: float
+    control_reactivity: float
     openmc_reactivity: float
     temperature_reactivity: float
     total_reactivity: float
@@ -164,6 +165,7 @@ class ReactorDynamics:
             power_mw=reactor_state.power_mw,
             temperature_k=self.temperature_k,
             external_reactivity=self._external_reactivity,
+            control_reactivity=self._control_reactivity,
             openmc_reactivity=openmc_reactivity,
             temperature_reactivity=temperature_reactivity,
             total_reactivity=total_reactivity,
@@ -175,7 +177,6 @@ class ReactorDynamics:
         heat_removed_mw: float,
         external_reactivity: float | None = None,
     ) -> ReactorDynamicsState:
-        """Avanza la dinámica acoplada del reactor."""
         if self._scrammed:
             return self.state()
 
@@ -252,6 +253,7 @@ class ReactorDynamics:
             power_mw=reactor_state.power_mw,
             temperature_k=thermal_state.temperature_k,
             external_reactivity=self._external_reactivity,
+            control_reactivity=self._control_reactivity,
             openmc_reactivity=openmc_reactivity,
             temperature_reactivity=(
                 self.temperature_feedback

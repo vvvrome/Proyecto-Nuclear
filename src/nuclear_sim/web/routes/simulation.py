@@ -47,6 +47,50 @@ def reset():
 
     return redirect(url_for("dashboard.index"))
 
+@simulation_bp.post("/control")
+def control():
+    simulation = current_app.config["SIMULATION"]
+
+    try:
+        if "power_percent" in request.form:
+            power_percent = float(
+                request.form.get("power_percent", "100")
+            )
+
+            if not 0.0 <= power_percent <= 100.0:
+                raise ValueError
+
+            power_fraction = power_percent / 100.0
+
+        else:
+            power_fraction = float(
+                request.form.get("power_fraction", "1.0")
+            )
+
+            if not 0.0 <= power_fraction <= 1.0:
+                raise ValueError
+
+    except ValueError:
+        return redirect(url_for("dashboard.index"))
+
+    simulation.set_reactor_power(
+        power_fraction=power_fraction,
+    )
+
+    return redirect(
+        url_for(
+            "dashboard.index",
+        )
+    )
+
+
+@simulation_bp.post("/scram")
+def scram():
+    simulation = current_app.config["SIMULATION"]
+
+    simulation.scram()
+
+    return redirect(url_for("dashboard.index"))
 
 @simulation_bp.get("/telemetry")
 def telemetry():

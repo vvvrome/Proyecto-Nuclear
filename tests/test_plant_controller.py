@@ -171,6 +171,40 @@ def test_plant_simulation_scram_controls_reactor_dynamics():
     assert dynamics.state().neutron_population == pytest.approx(0.0)
     assert controller.scram_actuator.state().position == pytest.approx(1.0)
 
+def test_plant_simulation_reset_restores_controller_state():
+    from nuclear_sim.plant.reactor_dynamics import ReactorDynamics
+
+    reactor = Reactor(rated_power_mw=3000)
+    dynamics = ReactorDynamics(rated_power_mw=3000)
+
+    controller = PlantController(
+        reactor=reactor,
+        reactor_dynamics=dynamics,
+    )
+
+    simulation = PlantSimulation(
+        reactor=reactor,
+        thermal_model=ThermalModel(),
+        reactor_dynamics=dynamics,
+        controller=controller,
+    )
+
+    controller.set_reactor_power(
+        power_fraction=0.5,
+        timestamp_s=10.0,
+    )
+
+    controller.scram(timestamp_s=20.0)
+
+    simulation.reset()
+
+    assert controller.target_power_fraction == pytest.approx(1.0)
+    assert controller.power_control.state().position == pytest.approx(1.0)
+    assert controller.scram_actuator.state().position == pytest.approx(0.0)
+    assert dynamics.state().power_fraction == pytest.approx(1.0)
+    assert dynamics.state().neutron_population == pytest.approx(1.0)
+    assert dynamics.state().total_reactivity == pytest.approx(0.0)
+
 def test_dynamic_controller_initializes_target_power():
     reactor = Reactor(rated_power_mw=3000)
     dynamics = ReactorDynamics(rated_power_mw=3000)
@@ -180,7 +214,7 @@ def test_dynamic_controller_initializes_target_power():
         reactor_dynamics=dynamics,
     )
 
-    assert controller.target_power_fraction == pytest.approx(0.0)
+    assert controller.target_power_fraction == pytest.approx(1.0)
 
 def test_dynamic_controller_sets_target_power():
     reactor = Reactor(rated_power_mw=3000)
