@@ -281,63 +281,397 @@
 </section>
 
 <section>
-    <h2>Evolución de potencia del reactor</h2>
+    <h2>Evolución temporal de la planta</h2>
 
     <div class="card">
+        <h3>Potencia</h3>
         <canvas id="powerChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h3>Reactividad</h3>
+        <canvas id="reactivityChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h3>Estado neutrónico y térmico</h3>
+        <canvas id="stateChart"></canvas>
     </div>
 </section>
 
 <script>
-async function loadPowerChart() {
-    const response = await fetch("{{ url_for('simulation.telemetry') }}");
+async function loadTelemetryCharts() {
+    const response = await fetch(
+        "{{ url_for('simulation.telemetry') }}"
+    );
+
+    if (!response.ok) {
+        throw new Error("No se pudo obtener la telemetría");
+    }
+
     const readings = await response.json();
 
-    const powerReadings = readings.filter(
-        reading => reading.variable === "reactor_power"
-    );
+    const series = {};
 
-    const labels = powerReadings.map(
-        reading => reading.timestamp_s
-    );
+    readings.forEach(reading => {
+        if (!series[reading.variable]) {
+            series[reading.variable] = [];
+        }
 
-    const values = powerReadings.map(
-        reading => reading.value
-    );
+        series[reading.variable].push(reading);
+    });
 
-    const ctx = document.getElementById("powerChart");
+    const labels = series.reactor_power
+        ? series.reactor_power.map(
+            reading => Number(reading.timestamp_s.toFixed(1))
+        )
+        : [];
 
-    new Chart(ctx, {
-        type: "line",
-        data: {
-            labels: labels,
-            datasets: [{
-                label: "Potencia del reactor (MW)",
-                data: values,
-                tension: 0.2
-            }]
+    function values(variable) {
+        return series[variable]
+            ? series[variable].map(reading => reading.value)
+            : [];
+    }
+
+    /*
+     * Consigna actual del reactor.
+     *
+     * Se obtiene directamente del actuador mostrado en el dashboard.
+     * El valor se expresa en MW para compararlo con la potencia del reactor.
+     */
+    const targetPowerFraction =
+        {{ actuator_states.reactor_power_control.position }};
+
+    const ratedPowerMw = 3000.0;
+    const targetPowerMw = targetPowerFraction * ratedPowerMw;
+
+    /*
+     * Formateador común para los ejes temporales.
+     */
+    const timeScale = {
+        title: {
+            display: true,
+            text: "Tiempo (s)"
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: "Tiempo (s)"
+        ticks: {
+            callback: value => {
+                return Number(value).toFixed(1);
+            }
+        }
+    };
+
+    /*
+     * Gráfica de potencia.
+     */
+    new Chart(
+        document.getElementById("powerChart"),
+        {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Potencia reactor (MW)",
+                        data: values("reactor_power"),
+                        tension: 0.2
+                    },
+                    {
+                        label: "Potencia eléctrica (MW)",
+                        data: values("electrical_power"),
+                        tension: 0.2
+                    },
+                    {
+                        label: "Potencia neta (MW)",
+                        data: values("net_electrical_power"),
+                        tension: 0.2
+                    },
+                    {
+                        label: "Consigna actual (MW)",
+                        data: labels.map(() => targetPowerMw),
+                        borderDash: [8, 6],
+                        pointRadius: 0,
+                        tension: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: "index",
+                    intersect: false
+                },
+                scales: {
+                    x: timeScale,
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Potencia (MW)"
+                        },
+                        ticks: {
+                            callback: value => {
+                                return Number(value).toFixed(0);
+                            }
+                        }
                     }
                 },
-                y: {
-                    title: {
-                        display: true,
-                        text: "Potencia (MW)"
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: context => {
+                                return `${context.dataset.label}: ${Number(context.parsed.y).toFixed(2)} MW`;
+                            }
+                        }
                     }
                 }
             }
         }
-    });
+    );
+
+    /*
+     * Gráfica de reactividad.
+     *
+     * Calculamos automáticamente una escala basada en los valores
+     * realmente presentes para evitar que valores del orden de 10^-4
+     * queden aplastados contra una escala de -1 a +1.
+     */
+    const reactivityVariables = [
+        "external_reactivity",
+        "control_reactivity",
+        "openmc_reactivity",
+        "temperature_reactivity",
+        "total_reactivity"
+    ];
+
+    const reactivityValues = reactivityVariables
+        .flatMap(variable => values(variable))
+        .filter(value => Number.isFinite(value));
+
+    let reactivityMin = Math.min(...reactivityValues);
+    let reactivityMax = Math.max(...reactivityValues);
+
+    if (!Number.isFinite(reactivityMin) || !Number.isFinite(reactivityMax)) {
+        reactivityMin = -0.001;
+        reactivityMax = 0.001;
+    }
+
+    if (reactivityMin === reactivityMax) {
+        const margin = Math.max(Math.abs(reactivityMin) * 0.2, 0.000001);
+        reactivityMin -= margin;
+        reactivityMax += margin;
+    } else {
+        const margin =
+            (reactivityMax - reactivityMin) * 0.15;
+
+        reactivityMin -= margin;
+        reactivityMax += margin;
+    }
+
+    new Chart(
+        document.getElementById("reactivityChart"),
+        {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Externa",
+                        data: values("external_reactivity"),
+                        tension: 0.2
+                    },
+                    {
+                        label: "Control",
+                        data: values("control_reactivity"),
+                        tension: 0.2
+                    },
+                    {
+                        label: "OpenMC",
+                        data: values("openmc_reactivity"),
+                        tension: 0.2
+                    },
+                    {
+                        label: "Térmica",
+                        data: values("temperature_reactivity"),
+                        tension: 0.2
+                    },
+                    {
+                        label: "Total",
+                        data: values("total_reactivity"),
+                        tension: 0.2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: "index",
+                    intersect: false
+                },
+                scales: {
+                    x: timeScale,
+                    y: {
+                        min: reactivityMin,
+                        max: reactivityMax,
+                        title: {
+                            display: true,
+                            text: "Reactividad (Δk/k)"
+                        },
+                        ticks: {
+                            callback: value => {
+                                return Number(value).toExponential(2);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: context => {
+                                return `${context.dataset.label}: ${Number(context.parsed.y).toExponential(4)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    );
+
+    /*
+     * Gráfica neutrónica y térmica.
+     *
+     * Cada variable conserva su propia escala.
+     */
+    const neutronValues = values("neutron_population")
+        .filter(value => Number.isFinite(value));
+
+    let neutronMin = Math.min(...neutronValues);
+    let neutronMax = Math.max(...neutronValues);
+
+    if (!Number.isFinite(neutronMin) || !Number.isFinite(neutronMax)) {
+        neutronMin = 0.9;
+        neutronMax = 1.1;
+    }
+
+    if (neutronMin === neutronMax) {
+        const margin = Math.max(Math.abs(neutronMin) * 0.01, 0.001);
+        neutronMin -= margin;
+        neutronMax += margin;
+    } else {
+        const margin =
+            (neutronMax - neutronMin) * 0.15;
+
+        neutronMin -= margin;
+        neutronMax += margin;
+    }
+
+    const temperatureValues = values("reactor_temperature")
+        .filter(value => Number.isFinite(value));
+
+    let temperatureMin = Math.min(...temperatureValues);
+    let temperatureMax = Math.max(...temperatureValues);
+
+    if (!Number.isFinite(temperatureMin) || !Number.isFinite(temperatureMax)) {
+        temperatureMin = 570;
+        temperatureMax = 580;
+    }
+
+    if (temperatureMin === temperatureMax) {
+        const margin = 0.5;
+        temperatureMin -= margin;
+        temperatureMax += margin;
+    } else {
+        const margin =
+            (temperatureMax - temperatureMin) * 0.15;
+
+        temperatureMin -= margin;
+        temperatureMax += margin;
+    }
+
+    new Chart(
+        document.getElementById("stateChart"),
+        {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Población neutrónica",
+                        data: values("neutron_population"),
+                        tension: 0.2,
+                        yAxisID: "neutrons"
+                    },
+                    {
+                        label: "Temperatura (K)",
+                        data: values("reactor_temperature"),
+                        tension: 0.2,
+                        yAxisID: "temperature"
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: "index",
+                    intersect: false
+                },
+                scales: {
+                    x: timeScale,
+                    neutrons: {
+                        type: "linear",
+                        position: "left",
+                        min: neutronMin,
+                        max: neutronMax,
+                        title: {
+                            display: true,
+                            text: "Población neutrónica"
+                        },
+                        ticks: {
+                            callback: value => {
+                                return Number(value).toFixed(3);
+                            }
+                        }
+                    },
+                    temperature: {
+                        type: "linear",
+                        position: "right",
+                        min: temperatureMin,
+                        max: temperatureMax,
+                        title: {
+                            display: true,
+                            text: "Temperatura (K)"
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        ticks: {
+                            callback: value => {
+                                return Number(value).toFixed(2);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: context => {
+                                if (context.dataset.yAxisID === "temperature") {
+                                    return `${context.dataset.label}: ${Number(context.parsed.y).toFixed(2)} K`;
+                                }
+
+                                return `${context.dataset.label}: ${Number(context.parsed.y).toFixed(4)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    );
 }
 
-loadPowerChart();
+loadTelemetryCharts().catch(error => {
+    console.error("Error cargando las gráficas:", error);
+});
 </script>
 {% endblock %}
