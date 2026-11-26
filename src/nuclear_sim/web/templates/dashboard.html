@@ -164,18 +164,38 @@
 
     <div class="dashboard-grid">
         <div class="card">
-            <h3>Externa</h3>
-            <div class="value">{{ "%.6f"|format(state.external_reactivity) }}</div>
+            <h3>Reactividad externa</h3>
+            <div class="value">
+                {{ "%.6f"|format(state.external_reactivity) }}
+            </div>
         </div>
 
         <div class="card">
-            <h3>Térmica</h3>
-            <div class="value">{{ "%.6f"|format(state.temperature_reactivity) }}</div>
+            <h3>Reactividad de control</h3>
+            <div class="value">
+                {{ "%.6f"|format(state.control_reactivity) }}
+            </div>
         </div>
 
         <div class="card">
-            <h3>Total</h3>
-            <div class="value">{{ "%.6f"|format(state.total_reactivity) }}</div>
+            <h3>Reactividad OpenMC</h3>
+            <div class="value">
+                {{ "%.6f"|format(state.openmc_reactivity) }}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Reactividad térmica</h3>
+            <div class="value">
+                {{ "%.6f"|format(state.temperature_reactivity) }}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Reactividad total</h3>
+            <div class="value">
+                {{ "%.6f"|format(state.total_reactivity) }}
+            </div>
         </div>
     </div>
 </section>

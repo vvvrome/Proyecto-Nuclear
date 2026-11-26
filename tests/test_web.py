@@ -9,6 +9,29 @@ def test_dashboard_returns_200():
 
     assert response.status_code == 200
 
+def test_dashboard_shows_reactivity_components():
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+
+    html = response.get_data(as_text=True)
+    state = app.config["SIMULATION"].state()
+
+    assert "Reactividad externa" in html
+    assert "Reactividad de control" in html
+    assert "Reactividad OpenMC" in html
+    assert "Reactividad térmica" in html
+    assert "Reactividad total" in html
+
+    assert f"{state.external_reactivity:.6f}" in html
+    assert f"{state.control_reactivity:.6f}" in html
+    assert f"{state.openmc_reactivity:.6f}" in html
+    assert f"{state.temperature_reactivity:.6f}" in html
+    assert f"{state.total_reactivity:.6f}" in html
+
 def test_simulation_step_updates_state():
     app = create_app()
     client = app.test_client()
