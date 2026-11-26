@@ -160,5 +160,5 @@ def test_simulation_generates_telemetry():
 
     readings = telemetry.collect(state)
 
-    assert len(readings) == 20
+    assert len(readings) == 22
     assert all(isinstance(reading, TelemetryReading) for reading in readings)

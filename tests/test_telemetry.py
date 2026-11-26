@@ -91,7 +91,7 @@ def test_telemetry_collector_collects_plant_state():
 
     readings = collector.collect(state)
 
-    assert len(readings) == 20
+    assert len(readings) == 22
     assert all(reading.timestamp_s == 10.0 for reading in readings)
 
 
@@ -136,7 +136,7 @@ def test_simulation_generates_telemetry():
 
     readings = telemetry.collect(state)
 
-    assert len(readings) == 20
+    assert len(readings) == 22
     assert all(isinstance(reading, TelemetryReading) for reading in readings)
 
 class FakeRepository:
@@ -236,7 +236,7 @@ def test_simulation_recorder_saves_telemetry():
     assert state.time_s == 0.1
     assert len(repository.saved_readings) == 1
     assert repository.saved_readings[0]["run_id"] == 123
-    assert len(repository.saved_readings[0]["readings"]) == 20
+    assert len(repository.saved_readings[0]["readings"]) == 22
 
 
 def test_simulation_recorder_finishes_run():

@@ -95,8 +95,23 @@ def test_telemetry_endpoint_returns_readings():
 
     data = response.get_json()
 
-    assert len(data) == 20
+    assert len(data) == 22
     assert data[0]["timestamp_s"] == 0.1
+
+    variables = {reading["variable"]: reading for reading in data}
+
+    assert "control_reactivity" in variables
+    assert "openmc_reactivity" in variables
+
+    state = app.config["SIMULATION"].state()
+
+    assert variables["control_reactivity"]["value"] == pytest.approx(
+    state.control_reactivity
+    )
+
+    assert variables["openmc_reactivity"]["value"] == pytest.approx(
+    state.openmc_reactivity
+    )
 
 def test_asir_subject_returns_200():
     app = create_app()

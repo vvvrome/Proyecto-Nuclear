@@ -57,6 +57,18 @@ class TelemetryCollector:
                 value=state.external_reactivity,
                 unit="delta_k_over_k",
             ),
+        TelemetryReading(
+    timestamp_s=timestamp,
+    variable="control_reactivity",
+    value=state.control_reactivity,
+    unit="delta_k_over_k",
+        ),
+        TelemetryReading(
+    timestamp_s=timestamp,
+    variable="openmc_reactivity",
+    value=state.openmc_reactivity,
+    unit="delta_k_over_k",
+        ),
             TelemetryReading(
                 timestamp_s=timestamp,
                 variable="temperature_reactivity",

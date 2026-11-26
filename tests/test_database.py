@@ -170,7 +170,7 @@ def test_simulation_recorder_persists_real_simulation():
         assert incidents[0].severity == "warning"
         assert incidents[0].status == "open"
 
-        assert len(readings) == 60
+        assert len(readings) == 66
 
         assert readings[0].timestamp_s == pytest.approx(0.1)
         assert readings[-1].timestamp_s == pytest.approx(0.3)
