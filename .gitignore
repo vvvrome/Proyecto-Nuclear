@@ -117,3 +117,15 @@ data/openmc/
 # ==============================
 
 data/academic_files/
+
+# ==============================
+# Local simulation experiments
+# ==============================
+
+backup_lun
+prueba*.txt
+test_controller_kp*.txt
+test_open_loop_kinetics.txt
+test_positive_reactivity*.txt
+test_reactivity.txt
+test_recovery.txt
